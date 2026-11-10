@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>hrdb 조회</title>
+<style>
+/* Layout: 위에 스키마 탭, 왼쪽 테이블 목록, 오른쪽 결과 표. 아래 SQL 칸. 화면은 DB에 매번 직접 조회 */
+:root{
+  --bg:#f4f6f7; --surface:#ffffff; --fg:#18232b; --muted:#5b6a75; --line:#d5dde2;
+  --accent:#1f6f6b; --accent-soft:#dff0ee; --null:#9aa7b0; --err:#a1261b; --err-soft:#fbe4e1;
+  --body:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#11181c; --surface:#182228; --fg:#e6edf0; --muted:#9fb0ba; --line:#2f3d45;
+  --accent:#6fd0c8; --accent-soft:#163533; --null:#5f707a; --err:#ff9b8f; --err-soft:#3b1d1a; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.55}
+.wrap{max-width:1400px;margin:0 auto;padding:20px 16px 48px;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline}
+h1{margin:0;font-size:20px}
+.live{font-size:12.5px;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:3px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button,.btn{font:inherit;padding:6px 12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:3px;cursor:pointer}
+.tabs button[aria-selected="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.tabs small{color:var(--muted);margin-left:4px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button:disabled{opacity:.4;cursor:default}
+.main{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:800px){.main{grid-template-columns:minmax(0,1fr)}}
+nav{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px;display:grid;gap:2px;max-height:75vh;overflow:auto}
+nav button{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:8px;padding:6px 9px;border-radius:3px}
+nav button:hover{background:var(--bg)}
+nav button[aria-selected="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+nav small{font-family:var(--mono);color:var(--muted);font-size:12px}
+nav .empty{color:var(--muted);padding:8px}
+.panel{display:grid;gap:10px;min-width:0}
+.bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.bar h2{margin:0;font-size:17px;font-family:var(--mono)}
+.bar input{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:3px;background:var(--surface);color:var(--fg);flex:1 1 220px;max-width:320px}
+.info{color:var(--muted);font-size:13px}
+.pager{display:flex;gap:6px;align-items:center;margin-left:auto}
+.pager span{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.box{overflow:auto;max-height:65vh;background:var(--surface);border:1px solid var(--line);border-radius:4px}
+table{border-collapse:collapse;font-size:13px;width:max-content;min-width:100%}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:top}
+th{position:sticky;top:0;background:var(--surface);z-index:1}
+th span{display:block;font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:400}
+td{font-family:var(--mono)}
+td.null{color:var(--null)}
+td.long{max-width:480px;overflow:hidden;text-overflow:ellipsis}
+.err{background:var(--err-soft);color:var(--err);padding:8px 12px;border-radius:3px}
+.sql{display:grid;gap:8px}
+.sql h3{margin:0;font-size:15px}
+textarea{font-family:var(--mono);font-size:13px;width:100%;min-height:90px;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--fg);resize:vertical}
+.hint{color:var(--muted);font-size:12.5px}
+.ex{display:flex;flex-wrap:wrap;gap:6px}
+.ex button{font-size:12.5px;padding:4px 9px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>hrdb 조회</h1><span class="live">DB에 직접 조회 중</span>
+    <span class="info">가상 데이터 · 읽기 전용 · 내 컴퓨터에서만 열림</span></header>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="main">
+    <nav id="nav" aria-label="테이블"></nav>
+    <section class="panel">
+      <div class="bar">
+        <h2 id="title">테이블을 고르세요</h2>
+        <input id="q" type="search" placeholder="검색 (예: 이서준, E1001, 20260814)" aria-label="이 테이블에서 검색">
+        <span class="info" id="info"></span>
+        <div class="pager"><button class="btn" id="prev" type="button">이전</button><span id="pg"></span><button class="btn" id="next" type="button">다음</button></div>
+      </div>
+      <div id="msg"></div>
+      <div class="box"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+    </section>
+  </div>
+
+  <section class="sql">
+    <h3>SQL로 직접 조회</h3>
+    <textarea id="sql" spellcheck="false">SELECT "사원번호", "성명", "입사일자", "재직구분코드"
+FROM erp."사원"
+WHERE "재직구분코드" = '20'</textarea>
+    <div class="ex" id="ex"></div>
+    <div class="bar"><button class="btn" id="run" type="button">실행 (⌘+Enter)</button><span class="info" id="sqlinfo">조회 문장(SELECT)만 실행됩니다. 결과는 위 표에 나옵니다.</span></div>
+  </section>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt = n => Number(n).toLocaleString("ko-KR");
+let T = {}, schema = "erp", table = null, page = 0, q = "", mode = "table";
+
+const EX = [
+  ["이서준 기록", `SELECT * FROM erp."전자결재_신청" WHERE "사원번호" = (SELECT "사원번호" FROM erp."사원" WHERE "성명" = '이서준') ORDER BY "신청일자" DESC`],
+  ["부서별 인원", `SELECT d."부서명", count(*) AS 인원 FROM erp."사원" s JOIN erp."부서" d USING ("부서코드") GROUP BY 1 ORDER BY 2 DESC`],
+  ["경조금 합계", `SELECT "신청사유", count(*), sum(("신청내용"->>'amount')::int) AS 금액 FROM erp."전자결재_신청" WHERE "신청구분" IN ('경조금신청','출산축하금신청') GROUP BY 1 ORDER BY 3 DESC`],
+  ["연차 잔여 적은 순", `SELECT "사원번호", "발생일수", "사용일수", "잔여일수" FROM erp."연차_현황" WHERE "기준년도" = 2026 ORDER BY "잔여일수" LIMIT 20`],
+];
+$("ex").innerHTML = EX.map((e,i)=>`<button class="btn" type="button" data-i="${i}">${esc(e[0])}</button>`).join("");
+$("ex").addEventListener("click", e => { const b = e.target.closest("button"); if(!b) return; $("sql").value = EX[b.dataset.i][1]; runSql(); });
+
+async function api(url, opt){ const r = await fetch(url, opt); const j = await r.json(); if(!r.ok) throw new Error(j.error || "오류"); return j; }
+
+async function boot(){
+  try { T = await api("/api/tables"); } catch(e){ $("msg").innerHTML = `<div class="err">DB에 연결하지 못했습니다: ${esc(e.message)}</div>`; return; }
+  $("tabs").innerHTML = Object.entries(T).map(([s,ts]) => `<button type="button" role="tab" data-s="${s}" aria-selected="${s===schema}">${s}<small>${ts.length}</small></button>`).join("");
+  $("tabs").onclick = e => { const b = e.target.closest("button"); if(!b) return; schema = b.dataset.s; drawNav(); const first = T[schema][0]; if(first) open(first.name); };
+  drawNav();
+  const saved = (()=>{ try{ return JSON.parse(localStorage.getItem("hrdb-last")||"null"); }catch(e){ return null; } })();
+  if(saved && T[saved.s]?.some(t=>t.name===saved.t)){ schema = saved.s; drawNav(); open(saved.t); }
+  else if(T.erp?.length) open(T.erp.find(t=>t.name==="사원")?.name || T.erp[0].name);
+}
+function drawNav(){
+  [...$("tabs").children].forEach(b => b.setAttribute("aria-selected", b.dataset.s===schema));
+  const ts = T[schema] || [];
+  $("nav").innerHTML = ts.length ? ts.map(t => `<button type="button" data-t="${esc(t.name)}" aria-selected="${t.name===table}"><span>${esc(t.name)}</span><small>${fmt(t.n)}</small></button>`).join("")
+    : `<div class="empty">${schema} 스키마는 아직 비어 있습니다</div>`;
+}
+$("nav").addEventListener("click", e => { const b = e.target.closest("button"); if(b) open(b.dataset.t); });
+
+function open(t){ table = t; page = 0; q = ""; $("q").value = ""; mode = "table"; drawNav(); load();
+  try{ localStorage.setItem("hrdb-last", JSON.stringify({s:schema,t})); }catch(e){} }
+async function load(){
+  $("title").textContent = `${schema}."${table}"`; $("msg").innerHTML = ""; $("info").textContent = "조회 중…";
+  try {
+    const d = await api(`/api/rows?schema=${encodeURIComponent(schema)}&table=${encodeURIComponent(table)}&page=${page}&q=${encodeURIComponent(q)}`);
+    draw(d.cols, d.rows, d.total ? "" : (q ? "검색 결과가 없습니다" : "행이 없습니다"));
+    $("info").textContent = q ? `${fmt(d.total)}행 찾음` : `전체 ${fmt(d.total)}행`;
+    $("pg").textContent = `${d.page+1} / ${d.pages}`; $("prev").disabled = d.page===0; $("next").disabled = d.page>=d.pages-1;
+    $("prev").hidden = $("next").hidden = $("pg").hidden = false; $("q").hidden = false;
+  } catch(e){ $("msg").innerHTML = `<div class="err">${esc(e.message)}</div>`; $("info").textContent = ""; }
+}
+function draw(cols, rows, empty){
+  $("th").innerHTML = "<tr>" + cols.map(c => `<th>${esc(c.name)}${c.type?`<span>${esc(c.type)}</span>`:""}</th>`).join("") + "</tr>";
+  $("tb").innerHTML = rows.length ? rows.map(r => "<tr>" + r.map(v => v===null ? `<td class="null">NULL</td>`
+      : `<td${String(v).length>60?` class="long" title="${esc(v)}"`:""}>${esc(v)}</td>`).join("") + "</tr>").join("")
+    : `<tr><td class="null" colspan="${Math.max(1,cols.length)}">${esc(empty)}</td></tr>`;
+}
+let timer;
+$("q").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => { q = $("q").value.trim(); page = 0; load(); }, 300); });
+$("prev").onclick = () => { page--; load(); };
+$("next").onclick = () => { page++; load(); };
+
+async function runSql(){
+  $("sqlinfo").textContent = "실행 중…"; $("msg").innerHTML = "";
+  try {
+    const d = await api("/api/sql", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({sql: $("sql").value})});
+    mode = "sql"; table = null; drawNav(); $("title").textContent = "SQL 결과";
+    draw(d.cols, d.rows, d.note || "결과 행이 없습니다");
+    $("info").textContent = `${fmt(d.rows.length)}행 · ${d.ms}ms`; $("q").hidden = true;
+    $("prev").hidden = $("next").hidden = $("pg").hidden = true;
+    $("sqlinfo").textContent = d.note || "완료";
+    window.scrollTo({top:0, behavior:"smooth"});
+  } catch(e){ $("sqlinfo").textContent = ""; $("msg").innerHTML = `<div class="err">${esc(e.message)}</div>`; window.scrollTo({top:0}); }
+}
+$("run").onclick = runSql;
+$("sql").addEventListener("keydown", e => { if((e.metaKey||e.ctrlKey) && e.key==="Enter"){ e.preventDefault(); runSql(); } });
+boot();
+</script>
+</body>
+</html>

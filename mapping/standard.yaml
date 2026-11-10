@@ -1,0 +1,292 @@
+# 우리 표준 형식 (hr 스키마) — 제품 쪽 정의. 고객사와 상관없이 고정
+# 팀 데이터 기준서 CSV 14종 + audit_log + attendance(부가). 커넥터(connector.py)가 이 정의대로 hr 테이블을 만듦
+# 타입: text / integer / bigint / numeric / date / time / boolean / jsonb
+order:
+- departments
+- employees
+- employee_pii
+- users
+- family
+- hr_history
+- absence_history
+- leave_balance
+- leave_history
+- requests
+- payroll
+- welfare_points
+- training
+- business_trips
+- audit_log
+- attendance
+tables:
+  departments:
+    pk:
+    - dept_id
+    fk:
+    - head_emp_id -> employees.emp_id
+    columns:
+      dept_id: text
+      dept_name: text
+      parent_id: text
+      dept_type: text
+      site: text
+      head_emp_id: text
+  employees:
+    pk:
+    - emp_id
+    fk:
+    - dept_id -> departments.dept_id
+    columns:
+      emp_id: text
+      name: text
+      gender: text
+      birth_date: date
+      dept_id: text
+      site: text
+      job_family: text
+      position: text
+      grade: integer
+      employment_type: text
+      hire_date: date
+      probation_end_date: date
+      work_pattern: text
+      work_pattern_since: date
+      weekly_hours: integer
+      status: text
+      last_promotion_date: date
+      retire_date: date
+      retire_type: text
+      email: text
+      base_salary: integer
+      duty: text
+  employee_pii:
+    pk:
+    - emp_id
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      emp_id: text
+      rrn: text
+      bank_name: text
+      account_no: text
+      mobile: text
+      zipcode: text
+      address_sido: text
+      address_sigungu: text
+      address_detail: text
+      address_changed_at: date
+      emergency_name: text
+      emergency_relation: text
+      emergency_phone: text
+  users:
+    pk:
+    - user_id
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      user_id: integer
+      emp_id: text
+      login_id: text
+      password_hash: text
+      role: text
+      is_active: boolean
+      created_at: date
+  family:
+    pk:
+    - family_id
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      family_id: text
+      emp_id: text
+      relation: text
+      name: text
+      birth_date: date
+      gender: text
+      child_order: integer
+      is_dependent: text
+      school_level: text
+      disabled: text
+      deceased_date: date
+      registered_at: date
+  hr_history:
+    pk:
+    - history_id
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      history_id: text
+      emp_id: text
+      event_type: text
+      effective_date: date
+      from_dept: text
+      to_dept: text
+      from_grade: integer
+      to_grade: integer
+      from_work_pattern: text
+      to_work_pattern: text
+      is_relocation: text
+  absence_history:
+    pk:
+    - absence_id
+    fk:
+    - emp_id -> employees.emp_id
+    - child_family_id -> family.family_id
+    columns:
+      absence_id: text
+      emp_id: text
+      absence_type: text
+      start_date: date
+      end_date: date
+      return_date: date
+      pay_rate: numeric
+      child_family_id: text
+  leave_balance:
+    pk:
+    - emp_id
+    - year
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      emp_id: text
+      year: integer
+      granted_days: integer
+      carried_days: integer
+      used_days: numeric
+      long_service_leave_used: text
+      remaining_days: numeric
+      asof_date: date
+  leave_history:
+    pk:
+    - leave_id
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      leave_id: integer
+      emp_id: text
+      leave_type: text
+      start_date: date
+      end_date: date
+      days: numeric
+      is_work_related: text
+      has_medical_cert: text
+      status: text
+      request_id: text
+  requests:
+    pk:
+    - request_id
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      request_id: text
+      emp_id: text
+      request_type: text
+      event_type: text
+      payload: jsonb
+      status: text
+      created_at: date
+      decided_at: date
+  payroll:
+    pk:
+    - pay_id
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      pay_id: integer
+      emp_id: text
+      pay_month: text
+      grade: integer
+      work_pattern: text
+      base_pay: integer
+      ordinary_wage: integer
+      duty_allowance: integer
+      family_allowance: integer
+      long_service_allowance: integer
+      shift_allowance: integer
+      meal_allowance: integer
+      overtime_hours: numeric
+      overtime_pay: integer
+      night_hours: numeric
+      night_pay: integer
+      holiday_hours: numeric
+      holiday_pay: integer
+      holiday_bonus: integer
+      performance_bonus: integer
+      gross_pay: integer
+      national_pension: integer
+      health_insurance: integer
+      long_term_care: integer
+      employment_insurance: integer
+      income_tax: integer
+      local_tax: integer
+      deductions: integer
+      net_pay: integer
+      pay_date: date
+  welfare_points:
+    pk:
+    - emp_id
+    - year
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      emp_id: text
+      year: integer
+      granted_points: integer
+      used_points: integer
+      expires_on: date
+  training:
+    pk:
+    - training_id
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      training_id: text
+      emp_id: text
+      year: integer
+      course_name: text
+      course_type: text
+      required: text
+      target_reason: text
+      hours: integer
+      status: text
+      completed_on: date
+  business_trips:
+    pk:
+    - trip_id
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      trip_id: text
+      emp_id: text
+      region_type: text
+      start_date: date
+      end_date: date
+      nights: integer
+      purpose: text
+      overtime_hours: numeric
+      status: text
+  audit_log:
+    pk:
+    - log_id
+    fk: []
+    columns:
+      log_id: text
+      actor_user_id: integer
+      action: text
+      target_emp_id: text
+      detail: text
+      created_at: timestamp
+  attendance:
+    pk:
+    - emp_id
+    - work_date
+    fk:
+    - emp_id -> employees.emp_id
+    columns:
+      emp_id: text
+      work_date: date
+      check_in: time
+      check_out: time
+      overtime_hours: numeric
+      night_hours: numeric
+      status: text

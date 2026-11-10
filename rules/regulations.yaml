@@ -1,0 +1,51 @@
+# 7단계 규정 목록: ALIO 코레일 내부규정 중 인사 업무 관련 33건 (11/06 전문 확인, 핵심 16 · 보조 17)
+# category = 규정 전체의 기본 팀 카테고리. 조문마다 제목 키워드로 다시 정함 (category_rules)
+# 팀 카테고리(11/10): 근태관리 / 수당 / 교육 / 출장 / 기타 복리후생 / 생애이벤트-결혼 / 생애이벤트-출산 / 생애이벤트-휴직·퇴직 / 생애이벤트-입사·승진 / 공통(카테고리 밖)
+
+regulations:
+  - {id: r01, name: 복지후생 규정, tier: 핵심, category: 기타 복리후생}
+  - {id: r02, name: 복지후생규정 시행세칙, tier: 핵심, category: 기타 복리후생}
+  - {id: r03, name: 취업규칙, tier: 핵심, category: 근태관리}
+  - {id: r04, name: 유연근무제 운영세칙, tier: 핵심, category: 근태관리}
+  - {id: r05, name: 여비및시험수당지급세칙, tier: 핵심, category: 출장}
+  - {id: r06, name: 겸직허가 운영 내규, tier: 핵심, category: 공통}
+  - {id: r07, name: 보수규정, tier: 핵심, category: 수당}
+  - {id: r08, name: 보수규정 시행세칙, tier: 핵심, category: 수당}
+  - {id: r09, name: 퇴직급여 지급 규정, tier: 핵심, category: 생애이벤트-휴직·퇴직}
+  - {id: r10, name: 퇴직급여 지급 규정 시행세칙, tier: 핵심, category: 생애이벤트-휴직·퇴직}
+  - {id: r11, name: 임금피크제 운영 내규, tier: 핵심, category: 생애이벤트-휴직·퇴직}
+  - {id: r12, name: 교육훈련규정, tier: 핵심, category: 교육}
+  - {id: r13, name: 인사규정, tier: 핵심, category: 공통}
+  - {id: r14, name: 인사규정 시행세칙, tier: 핵심, category: 공통}
+  - {id: r15, name: 직원 전보제한 운영 내규, tier: 핵심, category: 공통}
+  - {id: r16, name: 철도공사 기간제근로자운영내규, tier: 핵심, category: 공통}
+  - {id: r17, name: 당직 및 비상근무 규정, tier: 보조, category: 근태관리}
+  - {id: r18, name: 임원의 복무에 관한 지침, tier: 보조, category: 공통, note: 임원 전용 — 직원 답변에 섞이면 안 됨}
+  - {id: r19, name: 공무국외출장 및 해외근무직원 관리 규정, tier: 보조, category: 출장}
+  - {id: r20, name: 공무국외출장 시행세칙, tier: 보조, category: 출장}
+  - {id: r21, name: 국외훈련 시행세칙, tier: 보조, category: 교육}
+  - {id: r22, name: 1급 승진임용내규, tier: 보조, category: 생애이벤트-입사·승진}
+  - {id: r23, name: 2급 승진임용내규, tier: 보조, category: 생애이벤트-입사·승진}
+  - {id: r24, name: 4급 시험승진 임용내규, tier: 보조, category: 생애이벤트-입사·승진}
+  - {id: r25, name: 특별승진임용내규, tier: 보조, category: 생애이벤트-입사·승진}
+  - {id: r26, name: 채용 시행세칙, tier: 보조, category: 생애이벤트-입사·승진}
+  - {id: r27, name: 전문직직원 운영 세칙, tier: 보조, category: 공통}
+  - {id: r28, name: 특정직직원운영내규, tier: 보조, category: 공통}
+  - {id: r29, name: 철도직무관리내규, tier: 보조, category: 공통}
+  - {id: r30, name: 직제규정, tier: 보조, category: 공통}
+  - {id: r31, name: 직제규정 시행세칙, tier: 보조, category: 공통, note: 부서별 담당 업무(별표 4) — 담당자 연결 근거}
+  - {id: r32, name: 위임전결규정, tier: 보조, category: 공통}
+  - {id: r33, name: 문서관리 규정, tier: 보조, category: 공통}
+
+# 조문 제목(예: "제23조(연차휴가)")에 키워드가 있으면 그 카테고리로. 위에서부터 먼저 맞는 것
+# 공통 규정(인사규정 등)과 여러 주제가 섞인 규정(취업규칙)에서 조문 단위로 나누려는 것
+category_rules:
+  - {category: 생애이벤트-출산, keywords: [출산, 육아, 임신, 난임, 태아, 유산, 사산, 입양, 자녀돌봄]}
+  - {category: 생애이벤트-결혼, keywords: [결혼, 혼인, 청원휴가, 경조]}
+  - {category: 생애이벤트-휴직·퇴직, keywords: [휴직, 복직, 퇴직, 정년, 명예퇴직, 임금피크]}
+  - {category: 생애이벤트-입사·승진, keywords: [승진, 승급, 근무성적, 평정, 승격, 채용, 신규임용, 수습, 임용, 입사]}
+  - {category: 출장, keywords: [출장, 여비, 일비, 숙박비, 국외여비]}
+  - {category: 교육, keywords: [교육, 훈련, 연수, 학점]}
+  - {category: 수당, keywords: [수당, 보수, 봉급, 급여, 상여, 임금, 성과연봉]}
+  - {category: 근태관리, keywords: [휴가, 연차, 근무시간, 휴일, 휴게, 병가, 지각, 조퇴, 당직, 유연근무, 시차출퇴근, 교대근무]}
+  - {category: 기타 복리후생, keywords: [복지, 포인트, 학자금, 대부, 생활안정, 주택, 의료비, 건강검진, 동호회, 휴양]}

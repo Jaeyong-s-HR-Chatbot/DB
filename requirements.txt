@@ -1,0 +1,9 @@
+# hr_db 기본 환경 (.venv)
+pgserver        # 로컬 PostgreSQL 16 + pgvector
+psycopg[binary]
+faker
+pyyaml
+pdfplumber      # 7단계 규정 PDF 글자 뽑기
+olefile         # 7단계 규정 HWP 글자 뽑기
+numpy
+# 7단계 임베딩 (torch 환경에서 따로 실행): sentence-transformers, torch — 모델 BAAI/bge-m3

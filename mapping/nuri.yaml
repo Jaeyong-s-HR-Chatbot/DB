@@ -1,0 +1,120 @@
+# 항목 연결표: 누리철도㈜ 인사 DB(erp, 회사식) ↔ 우리 표준 형식(hr, 팀 데이터 기준서)
+#
+# 왼쪽 = 우리 표준 이름(팀 기준서 CSV 열 이름), 오른쪽 = 고객사 DB 이름
+# - 5단계 load_erp.py: 표준 CSV → 이 표를 거꾸로 적용 → erp 스키마 (회사 DB 흉내)
+# - 6단계 커넥터:      erp → 이 표를 그대로 적용 → hr 스키마 (챗봇이 읽는 곳)
+# 다른 회사가 오면 이 파일만 그 회사 값으로 새로 만들면 됨 (운영관리 담당 일)
+
+company:
+  id: nuri
+  name: 누리철도㈜
+
+# 날짜: 회사 DB는 '20260109' 같은 8자리 글자로 저장 (국내 ERP에서 흔한 형식)
+date_format: "%Y%m%d"
+
+# 코드값: 회사 DB는 글자 대신 코드로 저장. 표준 열 이름 기준, 모든 테이블에 같이 적용
+codes:
+  employment_type: {정규직: "1", 계약직: "2", 무기계약직: "3"}
+  status_emp:      {재직: "10", 휴직: "20", 퇴직: "30"}   # employees.status 전용
+  gender:          {M: "1", F: "2"}
+  work_pattern:    {일근: "D", 교대근무: "S", 교번근무: "R"}
+  role:            {employee: "U", hr_admin: "A"}
+  is_active:       {"true": "Y", "false": "N"}
+
+# 열마다 어떤 코드표를 쓰는지 (표준 테이블.열 → 코드표 이름)
+code_columns:
+  employees.employment_type: employment_type
+  employees.status: status_emp
+  employees.gender: gender
+  family.gender: gender
+  employees.work_pattern: work_pattern
+  payroll.work_pattern: work_pattern
+  hr_history.from_work_pattern: work_pattern
+  hr_history.to_work_pattern: work_pattern
+  users.role: role
+  users.is_active: is_active
+
+tables:
+  departments:
+    name: 부서
+    columns: {dept_id: 부서코드, dept_name: 부서명, parent_id: 상위부서코드, dept_type: 조직구분,
+              site: 사업장, head_emp_id: 부서장사번}
+  employees:
+    name: 사원
+    columns: {emp_id: 사원번호, name: 성명, gender: 성별코드, birth_date: 생년월일, dept_id: 부서코드,
+              site: 사업장, job_family: 직군, position: 직위, grade: 직급, employment_type: 고용구분코드,
+              hire_date: 입사일자, probation_end_date: 수습종료일자, work_pattern: 근무형태코드,
+              work_pattern_since: 근무형태적용일자, weekly_hours: 주소정근로시간, status: 재직구분코드,
+              last_promotion_date: 최종승진일자, retire_date: 퇴직일자, retire_type: 퇴직사유,
+              email: 사내메일, base_salary: 기본급, duty: 직책}
+  employee_pii:
+    name: 사원_개인정보
+    columns: {emp_id: 사원번호, rrn: 주민등록번호, bank_name: 급여은행, account_no: 급여계좌,
+              mobile: 휴대전화, zipcode: 우편번호, address_sido: 주소_시도, address_sigungu: 주소_시군구,
+              address_detail: 주소_상세, address_changed_at: 주소변경일자, emergency_name: 비상연락_성명,
+              emergency_relation: 비상연락_관계, emergency_phone: 비상연락_전화}
+  users:
+    name: 시스템_계정
+    columns: {user_id: 계정번호, emp_id: 사원번호, login_id: 로그인ID, password_hash: 비밀번호해시,
+              role: 권한코드, is_active: 사용여부, created_at: 생성일자}
+  family:
+    name: 가족
+    columns: {family_id: 가족번호, emp_id: 사원번호, relation: 관계, name: 가족성명, birth_date: 생년월일,
+              gender: 성별코드, child_order: 자녀순위, is_dependent: 부양여부, school_level: 학력구분,
+              disabled: 장애여부, deceased_date: 사망일자, registered_at: 등록일자}
+  hr_history:
+    name: 인사발령
+    columns: {history_id: 발령번호, emp_id: 사원번호, event_type: 발령구분, effective_date: 발령일자,
+              from_dept: 이전부서코드, to_dept: 발령부서코드, from_grade: 이전직급, to_grade: 발령직급,
+              from_work_pattern: 이전근무형태코드, to_work_pattern: 발령근무형태코드, is_relocation: 근무지이동여부}
+  absence_history:
+    name: 휴직
+    columns: {absence_id: 휴직번호, emp_id: 사원번호, absence_type: 휴직구분, start_date: 휴직시작일자,
+              end_date: 휴직종료일자, return_date: 복직일자, pay_rate: 급여지급률, child_family_id: 대상자녀가족번호}
+  leave_balance:
+    name: 연차_현황
+    columns: {emp_id: 사원번호, year: 기준년도, granted_days: 발생일수, carried_days: 이월일수,
+              used_days: 사용일수, long_service_leave_used: 장기재직휴가사용여부, remaining_days: 잔여일수,
+              asof_date: 기준일자}
+  leave_history:
+    name: 휴가_사용
+    columns: {leave_id: 휴가번호, emp_id: 사원번호, leave_type: 휴가구분, start_date: 시작일자,
+              end_date: 종료일자, days: 사용일수, is_work_related: 공상여부, has_medical_cert: 진단서제출여부,
+              status: 처리상태, request_id: 결재번호}
+  requests:
+    name: 전자결재_신청
+    columns: {request_id: 결재번호, emp_id: 사원번호, request_type: 신청구분, event_type: 신청사유,
+              payload: 신청내용, status: 결재상태, created_at: 신청일자, decided_at: 결재일자}
+  payroll:
+    name: 급여_지급
+    columns: {pay_id: 급여번호, emp_id: 사원번호, pay_month: 귀속년월, grade: 직급, work_pattern: 근무형태코드,
+              base_pay: 기본급, ordinary_wage: 통상임금, duty_allowance: 직책수당, family_allowance: 가족수당,
+              long_service_allowance: 장기근속수당, shift_allowance: 교대수당, meal_allowance: 급식보조비,
+              overtime_hours: 연장근로시간, overtime_pay: 연장근로수당, night_hours: 야간근로시간,
+              night_pay: 야간근로수당, holiday_hours: 휴일근로시간, holiday_pay: 휴일근로수당,
+              holiday_bonus: 명절상여금, performance_bonus: 성과급, gross_pay: 지급총액,
+              national_pension: 국민연금, health_insurance: 건강보험, long_term_care: 장기요양보험,
+              employment_insurance: 고용보험, income_tax: 소득세, local_tax: 지방소득세,
+              deductions: 공제총액, net_pay: 차인지급액, pay_date: 지급일자}
+  welfare_points:
+    name: 복지포인트
+    columns: {emp_id: 사원번호, year: 기준년도, granted_points: 배정포인트, used_points: 사용포인트,
+              expires_on: 소멸일자}
+  training:
+    name: 교육_이수
+    columns: {training_id: 교육이수번호, emp_id: 사원번호, year: 교육년도, course_name: 과정명,
+              course_type: 교육구분, required: 필수여부, target_reason: 대상사유, hours: 교육시간,
+              status: 이수상태, completed_on: 이수일자}
+  business_trips:
+    name: 출장
+    columns: {trip_id: 출장번호, emp_id: 사원번호, region_type: 출장지역구분, start_date: 출장시작일자,
+              end_date: 출장종료일자, nights: 숙박일수, purpose: 출장목적, overtime_hours: 연장근로시간,
+              status: 처리상태}
+  audit_log:
+    name: 접근_로그
+    columns: {log_id: 로그번호, actor_user_id: 실행계정번호, action: 행위, target_emp_id: 대상사원번호,
+              detail: 상세내용, created_at: 발생일시}
+  attendance:
+    name: 근태_일별
+    columns: {emp_id: 사원번호, work_date: 근무일자, check_in: 출근시각, check_out: 퇴근시각,
+              overtime_hours: 연장근로시간, night_hours: 야간근로시간, status: 근태구분}
