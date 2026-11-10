@@ -15,7 +15,16 @@ HR 복리후생 챗봇 팀 프로젝트의 **데이터·DB 쪽** 저장소입니
 | 5 회사 DB 흉내 | `load_erp.py`, `mapping/nuri.yaml` | CSV를 회사식 이름(사원·사원번호)·코드값·8자리 날짜로 바꿔 `erp`에 적재, 왕복 검사 |
 | 6 커넥터 | `connector.py`, `mapping/standard.yaml` | 읽기 전용 뷰(`erp_ro`) → 연결표로 변환 → `hr_staging` → 검사 통과 시 `hr`로 교체, `app.sync_log` 기록 |
 | 7 규정 RAG | `rag_fetch.py` → `rag_build.py` → `rag_embed.py` → `rag_load.py` → `rag_search.py` | ALIO 코레일 규정 33건 → 조문 조각(`data/regs/chunks.jsonl`) → BGE-M3 임베딩 → `rag` 스키마 |
+| DB 배포 | `docker-compose.yml`, `deploy/`, `db_export.py` | 덤프(8MB)로 팀원 누구나 같은 hrdb를 띄움 → [deploy/README.md](deploy/README.md) |
 | 조회 화면 | `db_viewer.py` | http://127.0.0.1:8765 에서 DB 직접 조회 (읽기 전용 SQL) |
+
+## DB 바로 쓰기 (팀원용)
+
+```bash
+docker compose up -d        # PostgreSQL 16 + pgvector, 접속 postgresql://hr:hrpass@localhost:5432/hrdb
+```
+
+스크립트를 이 DB에 붙일 때는 `export HRDB_URL=postgresql://hr:hrpass@localhost:5432/hrdb` (없으면 pgserver로 내 컴퓨터에 띄움)
 
 ## 회사 설정 (팀 "부서 구성")
 
@@ -46,5 +55,5 @@ python rag_embed.py                 # 7단계: torch + sentence-transformers 환
 
 ## 저장소에 없는 것
 
-- `pgdata/` (DB 파일), 규정 원문 파일(`data/regs/raw`, `rag_fetch.py`로 다시 받음), 임베딩 벡터(`rag_embed.py`로 다시 만듦), zip 묶음
+- `pgdata/` (DB 파일, 대신 `deploy/initdb/01_hrdb.sql.gz` 덤프로 배포), 규정 원문 파일(`data/regs/raw`, `rag_fetch.py`로 다시 받음), 임베딩 벡터(`rag_embed.py`로 다시 만듦), zip 묶음
 - 로컬 테스트 계정 비밀번호는 `generate.py`의 `TEST_PASSWORD` (가상 계정 전용)

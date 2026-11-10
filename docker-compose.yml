@@ -1,0 +1,22 @@
+# 누리철도 HR DB 배포: PostgreSQL 16 + pgvector, 처음 켤 때 deploy/initdb 의 덤프로 hrdb를 그대로 만듦
+# 실행: docker compose up -d   →   접속: postgresql://hr:hrpass@localhost:5432/hrdb
+# 다시 처음부터: docker compose down -v && docker compose up -d
+services:
+  hrdb:
+    image: pgvector/pgvector:pg16
+    container_name: nuri-hrdb
+    environment:
+      POSTGRES_USER: hr
+      POSTGRES_PASSWORD: hrpass        # 로컬 개발용. 공용 서버에 올릴 때는 .env로 바꿀 것
+      POSTGRES_DB: hrdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./deploy/initdb:/docker-entrypoint-initdb.d:ro
+      - hrdb-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hr -d hrdb"]
+      interval: 5s
+      retries: 30
+volumes:
+  hrdb-data:

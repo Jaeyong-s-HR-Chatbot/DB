@@ -10,7 +10,9 @@
   rag : 규정 문서 조문 청크 + 임베딩 벡터 (7단계)
   app : 대화 기록, 동기화 기록, 감사 로그
 """
+import os
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 import pgserver
 import psycopg
@@ -26,12 +28,22 @@ SCHEMAS = {
 }
 
 
+# 환경 변수 HRDB_URL 이 있으면 그 DB(예: docker compose로 띄운 DB)에 붙고, 없으면 pgserver로 내 컴퓨터에 띄움
+# 예: export HRDB_URL=postgresql://hr:hrpass@localhost:5432/hrdb
+HRDB_URL = os.environ.get("HRDB_URL")
+
+
 def get_server():
-    """pgserver로 로컬 PostgreSQL을 켜고 서버 객체를 돌려줌."""
+    """pgserver로 로컬 PostgreSQL을 켜고 서버 객체를 돌려줌. HRDB_URL이 있으면 아무것도 켜지 않음."""
+    if HRDB_URL:
+        return None
     return pgserver.get_server(str(HERE / "pgdata"))
 
 
 def connect(srv, dbname=DB_NAME):
+    if HRDB_URL:
+        u = urlsplit(HRDB_URL)
+        return psycopg.connect(urlunsplit(u._replace(path=f"/{dbname}")), autocommit=True)
     uri = srv.get_uri()  # postgresql://postgres:@/postgres?host=...
     return psycopg.connect(uri.replace("/postgres?", f"/{dbname}?"), autocommit=True)
 
