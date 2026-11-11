@@ -35,7 +35,7 @@ MAX_CHARS = 1500
 
 ART = re.compile(r"^\s*제\s*(\d+)\s*조(?:\s*의\s*(\d+))?\s*[\(（]([^)）\n]{1,40})[\)）]")
 ART_DEL = re.compile(r"^\s*제\s*(\d+)\s*조(?:\s*의\s*(\d+))?\s*(?:[\(（][^)）]*[\)）])?\s*삭\s*제")
-BYEOLPYO = re.compile(r"^\s*[\[【<]?\s*별\s*표\s*(\d+(?:\s*의\s*\d+)?)\s*[\]】>]?")
+BYEOLPYO = re.compile(r"^\s*[\[【<]?\s*별\s*표\s*(\d+(?:\s*의\s*\d+)?)\s*[\]】>]?|^\s*[\[【]\s*별\s*표\s*[\]】]\s*$")
 BYEOLJI = re.compile(r"^\s*[\[【<]?\s*별\s*지\s*(?:제\s*)?(\d+(?:\s*의\s*\d+)?)\s*호?")
 BUCHIK = re.compile(r"^\s*부\s*칙\b|^\s*부\s*칙\s*[<(]")
 PAGE_NO = re.compile(r"^\s*[-–]\s*\d+\s*[-–]\s*$|^\s*\d+\s*/\s*\d+\s*$")
@@ -169,10 +169,10 @@ def chunk_reg(reg):
         elif mm := ART.match(s):
             n = mm.group(1) + (f"의{mm.group(2)}" if mm.group(2) else "")
             start("부칙" if in_buchik else "조문", ("부칙 " if in_buchik else "") + f"제{n}조", mm.group(3).strip(), page)
-        elif (mm := BYEOLPYO.match(s)) and len(s) < 120 and s[mm.end():mm.end() + 1] not in "에와과를은는이가및":
+        elif (mm := BYEOLPYO.match(s)) and len(s) < 120 and (s[mm.end():mm.end() + 1] or " ") not in "에와과를은는이가및":
             in_buchik = False
-            start("별표", f"별표 {mm.group(1).replace(' ', '')}", s, page)
-        elif (mm := BYEOLJI.match(s)) and len(s) < 120 and s[mm.end():mm.end() + 1] not in "에와과를은는이가및":
+            start("별표", f"별표 {mm.group(1).replace(' ', '')}" if mm.group(1) else "별표", s, page)
+        elif (mm := BYEOLJI.match(s)) and len(s) < 120 and (s[mm.end():mm.end() + 1] or " ") not in "에와과를은는이가및":
             in_buchik = False
             start("서식", f"별지 {mm.group(1).replace(' ', '')}", s, page)
         cur["lines"].append(s)
