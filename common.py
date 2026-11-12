@@ -67,11 +67,12 @@ def annual_grant(hire, year, asof):
 
 
 # ---------- 가족수당 ----------
-def family_allowance(family_rows, ym):
-    """family_rows: 해당 직원의 가족 dict 목록. 월 1일 기준, 등록일이 그 이전인 부양가족만."""
+def family_allowance(family_rows, ym, grade=None):
+    """보수규정 시행세칙 제24조·별표 17. family_rows: 해당 직원의 가족 dict 목록, grade: 그 달 직급.
+    월 1일 기준, 등록일이 그 이전인 부양가족만. 배우자 포함 4명까지(자녀는 넘어도 지급), 2급 이상은 자녀분만."""
     r = RULES["family_allowance"]
     ms = month_start(ym)
-    total, kids, parents = 0, [], 0
+    spouse, kids, parents = 0, [], 0
     for f in family_rows:
         if f["is_dependent"] not in (True, "true", "True"):
             continue
@@ -81,15 +82,18 @@ def family_allowance(family_rows, ym):
             continue
         b = d(f["birth_date"])
         if f["relation"] == "배우자":
-            total += r["배우자"]
+            spouse = 1
         elif f["relation"] == "자녀" and age_on(b, ms) < r["child_age_limit"]:
             kids.append(b)
-        elif f["relation"] in ("부", "모", "배우자부", "배우자모") and age_on(b, ms) >= r["parent_age_min"]:
+        elif f["relation"] in ("부", "배우자부") and age_on(b, ms) >= r["parent_age_min_male"]:
             parents += 1
-    for i, _ in enumerate(sorted(kids)):
-        total += r["자녀"][min(i, 2)]
-    total += min(parents, r["parent_max"]) * r["직계존속"]
-    return total
+        elif f["relation"] in ("모", "배우자모") and age_on(b, ms) >= r["parent_age_min_female"]:
+            parents += 1
+    total = sum(r["자녀"][min(i, 2)] for i, _ in enumerate(sorted(kids)))
+    if grade is not None and int(grade) <= r["children_only_from_grade"]:
+        return total
+    paid_parents = max(0, min(spouse + parents, r["non_child_max"]) - spouse)
+    return total + spouse * r["배우자"] + paid_parents * r["직계존속"]
 
 
 # ---------- 급여 ----------

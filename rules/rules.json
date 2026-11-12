@@ -180,17 +180,15 @@
     "amount": 200000
   },
   "family_allowance": {
-    "_status": "🔍 공무원 수당규정 수준으로 가정. 가족 변동은 다음 달부터 반영",
-    "배우자": 40000,
-    "자녀": [
-      50000,
-      80000,
-      120000
-    ],
+    "_status": "✅ 보수규정 시행세칙 제24조·별표 17. 배우자 포함 4명까지(자녀는 4명을 넘어도 지급), 2급 이상은 자녀분만. 가족 변동은 다음 달부터 반영",
+    "배우자": 30000,
+    "자녀": [50000, 80000, 120000],
     "직계존속": 20000,
-    "child_age_limit": 20,
-    "parent_age_min": 60,
-    "parent_max": 2
+    "child_age_limit": 19,
+    "parent_age_min_male": 60,
+    "parent_age_min_female": 55,
+    "non_child_max": 4,
+    "children_only_from_grade": 2
   },
   "overtime": {
     "_status": "✅ 근로기준법 제56조 (연장·휴일 8시간 이내 1.5배, 야간 가산 0.5배). 시간급 = 통상임금 ÷ 209",

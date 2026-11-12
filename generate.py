@@ -716,7 +716,7 @@ for e in employees:
         base = base_pay(g, e["hire"], ms)
         duty = RULES["duty_allowance"][e["duty"]]
         meal = RULES["meal_allowance"]["amount"]
-        fam = family_allowance(e["family"], ym)
+        fam = family_allowance(e["family"], ym, g)
         pat = pattern_at(e, ms)
         shift = shift_allowance(pat)
         lsa = long_service_allowance(e["hire"], ms)
@@ -1081,3 +1081,7 @@ meta.mkdir(parents=True, exist_ok=True)
 print(f"employees {len(emp_rows)} | pii {len(pii)} | family {len(fam_rows)} | hr_history {len(hr_rows)} | "
       f"absence {len(absence_rows)} | trips {len(TRIPS)} | leave {len(leaves)} | payroll {len(payroll)} | "
       f"welfare {len(welfare)} | training {len(training)} | requests {len(requests)} | attendance(extra) {len(attendance)}")
+
+# ---------------------------------------------------------------- 골든셋 페르소나 3명 (기존 직원 3명을 바꿔 넣음)
+import golden_personas  # noqa: E402
+golden_personas.main()
