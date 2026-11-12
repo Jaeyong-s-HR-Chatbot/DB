@@ -1,6 +1,6 @@
 # 7단계 규정 목록: ALIO 코레일 내부규정 중 인사 업무 관련 33건 (11/06 전문 확인, 핵심 16 · 보조 17)
 # category = 규정 전체의 기본 팀 카테고리. 조각에는 이것 + 제목 키워드에 맞는 카테고리를 전부 붙임 (category_rules, categories.py)
-# 팀 카테고리(11/10): 근태관리 / 수당 / 교육 / 출장 / 기타 복리후생 / 생애이벤트-결혼 / 생애이벤트-출산 / 생애이벤트-휴직·퇴직 / 생애이벤트-입사·승진 / 공통(카테고리 밖)
+# 팀 카테고리(11/10): 근태관리 / 수당 / 교육 / 출장 / 기타 복리후생 / 생애이벤트-결혼 / 생애이벤트-출산 / 생애이벤트-휴직·복직·퇴직 / 생애이벤트-입사·승진 / 공통(카테고리 밖)
 
 regulations:
   - {id: r01, name: 복지후생 규정, tier: 핵심, category: 기타 복리후생}
@@ -11,9 +11,9 @@ regulations:
   - {id: r06, name: 겸직허가 운영 내규, tier: 핵심, category: 공통}
   - {id: r07, name: 보수규정, tier: 핵심, category: 수당}
   - {id: r08, name: 보수규정 시행세칙, tier: 핵심, category: 수당}
-  - {id: r09, name: 퇴직급여 지급 규정, tier: 핵심, category: 생애이벤트-휴직·퇴직}
-  - {id: r10, name: 퇴직급여 지급 규정 시행세칙, tier: 핵심, category: 생애이벤트-휴직·퇴직}
-  - {id: r11, name: 임금피크제 운영 내규, tier: 핵심, category: 생애이벤트-휴직·퇴직}
+  - {id: r09, name: 퇴직급여 지급 규정, tier: 핵심, category: 생애이벤트-휴직·복직·퇴직}
+  - {id: r10, name: 퇴직급여 지급 규정 시행세칙, tier: 핵심, category: 생애이벤트-휴직·복직·퇴직}
+  - {id: r11, name: 임금피크제 운영 내규, tier: 핵심, category: 생애이벤트-휴직·복직·퇴직}
   - {id: r12, name: 교육훈련규정, tier: 핵심, category: 교육}
   - {id: r13, name: 인사규정, tier: 핵심, category: 공통}
   - {id: r14, name: 인사규정 시행세칙, tier: 핵심, category: 공통}
@@ -42,7 +42,7 @@ regulations:
 category_rules:
   - {category: 생애이벤트-출산, keywords: [출산, 육아, 임신, 난임, 태아, 유산, 사산, 입양, 자녀돌봄]}
   - {category: 생애이벤트-결혼, keywords: [결혼, 혼인, 청원휴가, 경조]}
-  - {category: 생애이벤트-휴직·퇴직, keywords: [휴직, 복직, 퇴직, 정년, 명예퇴직, 임금피크]}
+  - {category: 생애이벤트-휴직·복직·퇴직, keywords: [휴직, 복직, 퇴직, 정년, 명예퇴직, 임금피크]}
   - {category: 생애이벤트-입사·승진, keywords: [승진, 승급, 근무성적, 평정, 승격, 채용, 신규임용, 수습, 임용, 입사]}
   - {category: 출장, keywords: [출장, 여비, 일비, 숙박비, 국외여비]}
   - {category: 교육, keywords: [교육, 훈련, 연수, 학점]}

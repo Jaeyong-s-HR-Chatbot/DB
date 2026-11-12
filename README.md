@@ -51,7 +51,7 @@ python rag_embed.py                 # 7단계: torch + sentence-transformers 환
 
 ## 팀 업무 카테고리 (규정 조각 category)
 
-근태관리 / 수당 / 교육 / 출장 / 기타 복리후생 / 생애이벤트-결혼 / 생애이벤트-출산 / 생애이벤트-휴직·퇴직 / 생애이벤트-입사·승진 / 공통 — `rules/regulations.yaml`
+근태관리 / 수당 / 교육 / 출장 / 기타 복리후생 / 생애이벤트-결혼 / 생애이벤트-출산 / 생애이벤트-휴직·복직·퇴직 / 생애이벤트-입사·승진 / 공통 — `rules/regulations.yaml`
 
 조각 하나에 카테고리를 **여러 개** 붙여요 (`rag.chunks.categories text[]`, 규칙은 `categories.py`).
 - 조문 제목(별표·서식은 앞 4줄)에 키워드가 맞는 카테고리를 전부 + 문서 기본 카테고리(공통이면 안 붙임). 아무것도 없으면 `공통`
