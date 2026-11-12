@@ -191,7 +191,7 @@ def chunk_reg(reg):
         for pi, part in enumerate(split_long(text), 1):
             seq += 1
             chunks.append(dict(
-                chunk_id=f"{reg['id']}-{seq:04d}", document_id=reg["id"], company_id=COMPANY,
+                chunk_id=f"{reg['id']}-{seq:04d}", document_id=reg["id"], company_id=COMPANY, doc_kind="내부규정",
                 doc_name=reg["name"], article=b["label"], article_title=b["title"],
                 part=pi, text=part, effective_date=effective_date(m), page=b["page"], source_file=m["file_name"],
                 chunk_type="목차" if toc else b["kind"], category=category_of(reg, b.get("cat_text", b["title"])) if b["kind"] != "전문" else reg["category"],
@@ -229,7 +229,7 @@ def main():
             for k, rx in PII.items():
                 if rx.search(c["text"]):
                     issues[f"개인정보 형식 ({k})"].append(f"{c['chunk_id']} {reg['name']} {c['article']}")
-        docs.append(dict(document_id=reg["id"], doc_name=reg["name"], tier=reg["tier"], category=reg["category"],
+        docs.append(dict(document_id=reg["id"], doc_name=reg["name"], doc_kind="내부규정", tier=reg["tier"], category=reg["category"],
                          file_kind=info["kind"], pages=info["pages"], chunks=len(ch),
                          searchable=sum(c["searchable"] for c in ch), chars=sum(len(c["text"]) for c in ch),
                          effective_date=ch[0]["effective_date"] if ch else None, source_file=MANIFEST[reg["id"]]["file_name"]))

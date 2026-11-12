@@ -2,6 +2,7 @@
  {
   "document_id": "r01",
   "doc_name": "복지후생 규정",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "기타 복리후생",
   "file_kind": "hwp",
@@ -15,6 +16,7 @@
  {
   "document_id": "r02",
   "doc_name": "복지후생규정 시행세칙",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "기타 복리후생",
   "file_kind": "pdf",
@@ -28,6 +30,7 @@
  {
   "document_id": "r03",
   "doc_name": "취업규칙",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "근태관리",
   "file_kind": "pdf",
@@ -41,6 +44,7 @@
  {
   "document_id": "r04",
   "doc_name": "유연근무제 운영세칙",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "근태관리",
   "file_kind": "pdf",
@@ -54,6 +58,7 @@
  {
   "document_id": "r05",
   "doc_name": "여비및시험수당지급세칙",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "출장",
   "file_kind": "pdf",
@@ -67,6 +72,7 @@
  {
   "document_id": "r06",
   "doc_name": "겸직허가 운영 내규",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "공통",
   "file_kind": "pdf",
@@ -80,6 +86,7 @@
  {
   "document_id": "r07",
   "doc_name": "보수규정",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "수당",
   "file_kind": "pdf",
@@ -93,6 +100,7 @@
  {
   "document_id": "r08",
   "doc_name": "보수규정 시행세칙",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "수당",
   "file_kind": "pdf",
@@ -106,6 +114,7 @@
  {
   "document_id": "r09",
   "doc_name": "퇴직급여 지급 규정",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "생애이벤트-휴직·퇴직",
   "file_kind": "pdf",
@@ -119,6 +128,7 @@
  {
   "document_id": "r10",
   "doc_name": "퇴직급여 지급 규정 시행세칙",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "생애이벤트-휴직·퇴직",
   "file_kind": "hwp",
@@ -132,6 +142,7 @@
  {
   "document_id": "r11",
   "doc_name": "임금피크제 운영 내규",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "생애이벤트-휴직·퇴직",
   "file_kind": "pdf",
@@ -145,6 +156,7 @@
  {
   "document_id": "r12",
   "doc_name": "교육훈련규정",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "교육",
   "file_kind": "hwp",
@@ -158,6 +170,7 @@
  {
   "document_id": "r13",
   "doc_name": "인사규정",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "공통",
   "file_kind": "pdf",
@@ -171,6 +184,7 @@
  {
   "document_id": "r14",
   "doc_name": "인사규정 시행세칙",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "공통",
   "file_kind": "pdf",
@@ -184,6 +198,7 @@
  {
   "document_id": "r15",
   "doc_name": "직원 전보제한 운영 내규",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "공통",
   "file_kind": "hwp",
@@ -197,6 +212,7 @@
  {
   "document_id": "r16",
   "doc_name": "철도공사 기간제근로자운영내규",
+  "doc_kind": "내부규정",
   "tier": "핵심",
   "category": "공통",
   "file_kind": "pdf",
@@ -210,6 +226,7 @@
  {
   "document_id": "r17",
   "doc_name": "당직 및 비상근무 규정",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "근태관리",
   "file_kind": "hwp",
@@ -223,6 +240,7 @@
  {
   "document_id": "r18",
   "doc_name": "임원의 복무에 관한 지침",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "공통",
   "file_kind": "hwp",
@@ -236,6 +254,7 @@
  {
   "document_id": "r19",
   "doc_name": "공무국외출장 및 해외근무직원 관리 규정",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "출장",
   "file_kind": "pdf",
@@ -249,6 +268,7 @@
  {
   "document_id": "r20",
   "doc_name": "공무국외출장 시행세칙",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "출장",
   "file_kind": "pdf",
@@ -262,6 +282,7 @@
  {
   "document_id": "r21",
   "doc_name": "국외훈련 시행세칙",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "교육",
   "file_kind": "hwp",
@@ -275,6 +296,7 @@
  {
   "document_id": "r22",
   "doc_name": "1급 승진임용내규",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "생애이벤트-입사·승진",
   "file_kind": "hwp",
@@ -288,6 +310,7 @@
  {
   "document_id": "r23",
   "doc_name": "2급 승진임용내규",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "생애이벤트-입사·승진",
   "file_kind": "hwp",
@@ -301,6 +324,7 @@
  {
   "document_id": "r24",
   "doc_name": "4급 시험승진 임용내규",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "생애이벤트-입사·승진",
   "file_kind": "hwp",
@@ -314,6 +338,7 @@
  {
   "document_id": "r25",
   "doc_name": "특별승진임용내규",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "생애이벤트-입사·승진",
   "file_kind": "hwp",
@@ -327,6 +352,7 @@
  {
   "document_id": "r26",
   "doc_name": "채용 시행세칙",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "생애이벤트-입사·승진",
   "file_kind": "pdf",
@@ -340,6 +366,7 @@
  {
   "document_id": "r27",
   "doc_name": "전문직직원 운영 세칙",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "공통",
   "file_kind": "hwp",
@@ -353,6 +380,7 @@
  {
   "document_id": "r28",
   "doc_name": "특정직직원운영내규",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "공통",
   "file_kind": "hwp",
@@ -366,6 +394,7 @@
  {
   "document_id": "r29",
   "doc_name": "철도직무관리내규",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "공통",
   "file_kind": "hwp",
@@ -379,6 +408,7 @@
  {
   "document_id": "r30",
   "doc_name": "직제규정",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "공통",
   "file_kind": "pdf",
@@ -392,6 +422,7 @@
  {
   "document_id": "r31",
   "doc_name": "직제규정 시행세칙",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "공통",
   "file_kind": "pdf",
@@ -405,6 +436,7 @@
  {
   "document_id": "r32",
   "doc_name": "위임전결규정",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "공통",
   "file_kind": "pdf",
@@ -418,6 +450,7 @@
  {
   "document_id": "r33",
   "doc_name": "문서관리 규정",
+  "doc_kind": "내부규정",
   "tier": "보조",
   "category": "공통",
   "file_kind": "hwp",
