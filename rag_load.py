@@ -9,7 +9,7 @@
 색인
   임베딩 HNSW(코사인) — 의미 검색
   본문 tsvector(simple) GIN — 낱말 검색 (한국어 형태소 분석은 아직 없음, 띄어쓰기 단위)
-  company_id, category, document_id
+  company_id, categories(GIN — categories && ARRAY[...]), document_id
 다시 실행하면 rag 스키마를 지우고 새로 만듦. 끝나면 조각 수·임베딩 수가 파일과 같은지 확인
 """
 import json
@@ -62,7 +62,7 @@ def main():
         con.execute(f"""CREATE TABLE rag.chunks (
             chunk_id text PRIMARY KEY, document_id text NOT NULL REFERENCES rag.documents(document_id),
             company_id text NOT NULL, doc_kind text NOT NULL, doc_name text NOT NULL, article text, article_title text, part integer,
-            chunk_type text NOT NULL, category text NOT NULL, searchable boolean NOT NULL,
+            chunk_type text NOT NULL, categories text[] NOT NULL, searchable boolean NOT NULL,
             text text NOT NULL, effective_date date, page integer, source_file text,
             embedding vector({dim}), tsv tsvector)""")
         for col, txt in [("documents.doc_kind", "문서 종류: 내부규정(ALIO 코레일 규정을 누리철도㈜로 바꾼 것) / 법령(국가법령정보센터 원문)"),
@@ -74,7 +74,9 @@ def main():
                          ("documents.law_mst", "법령 일련번호(MST): 법제처 Open API에서 받은 판의 번호 (내부규정은 NULL)"),
                          ("documents.status", "법령 판 상태: 현행 (시행 예정판은 넣지 않음, 내부규정은 NULL)"),
                          ("documents.base_date", "법령 기준일: 이 날 시행 중이던 판을 받음 (내부규정은 NULL)"),
-                         ("chunks.doc_kind", "문서 종류: 내부규정 / 법령 (documents.doc_kind 복사, 조인 없이 거르기용)")]:
+                         ("chunks.doc_kind", "문서 종류: 내부규정 / 법령 (documents.doc_kind 복사, 조인 없이 거르기용)"),
+                         ("chunks.categories", "팀 업무 카테고리 목록 (조문 제목 키워드 전부 + 문서 기본 카테고리, 없으면 공통). categories.py"),
+                         ("documents.category", "문서 기본 팀 카테고리 1개 (조각은 chunks.categories)")]:
             con.execute(f"COMMENT ON COLUMN rag.{col} IS '{txt}'")
         con.execute("COMMENT ON COLUMN rag.chunks.embedding IS %s" .replace("%s", f"'{meta['model']} {dim}차원, 정규화, 입력 = 규정명 조문 제목 + 본문'"))
         with con.cursor().copy("COPY rag.documents FROM STDIN") as cp:
@@ -84,17 +86,18 @@ def main():
                               d["doc_kind"], d.get("promulgated") or None, d.get("law_type"), d.get("dept"), d.get("source_url"),
                               d.get("law_mst"), d.get("status"), d.get("base_date")])
         with con.cursor().copy("COPY rag.chunks (chunk_id, document_id, company_id, doc_kind, doc_name, article, article_title, part, "
-                               "chunk_type, category, searchable, text, effective_date, page, source_file, embedding) FROM STDIN") as cp:
+                               "chunk_type, categories, searchable, text, effective_date, page, source_file, embedding) FROM STDIN") as cp:
             for c in chunks:
                 v = vec.get(c["chunk_id"])
                 cp.write_row([c["chunk_id"], c["document_id"], c["company_id"], c["doc_kind"], c["doc_name"], c["article"],
-                              c["article_title"], c["part"], c["chunk_type"], c["category"], c["searchable"], c["text"],
+                              c["article_title"], c["part"], c["chunk_type"], c["categories"], c["searchable"], c["text"],
                               c["effective_date"], c["page"], c["source_file"],
                               None if v is None else "[" + ",".join(f"{x:.6f}" for x in v) + "]"])
         con.execute("UPDATE rag.chunks SET tsv = to_tsvector('simple', coalesce(doc_name,'') || ' ' || coalesce(article_title,'') || ' ' || text)")
         con.execute("CREATE INDEX ON rag.chunks USING hnsw (embedding vector_cosine_ops)")
         con.execute("CREATE INDEX ON rag.chunks USING gin (tsv)")
-        con.execute("CREATE INDEX ON rag.chunks (company_id, category)")
+        con.execute("CREATE INDEX chunks_categories_idx ON rag.chunks USING gin (categories)")
+        con.execute("CREATE INDEX chunks_company_id_idx ON rag.chunks (company_id)")
         con.execute("CREATE INDEX ON rag.chunks (document_id)")
         con.execute("CREATE INDEX ON rag.chunks (doc_kind)")
         n, ne, nd = con.execute("SELECT count(*), count(embedding), count(DISTINCT document_id) FROM rag.chunks").fetchone()

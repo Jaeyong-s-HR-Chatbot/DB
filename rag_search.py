@@ -56,7 +56,7 @@ def search():
     with connect(get_server()) as con:
         for (q, doc, art, cat), v in zip(QUERIES, vecs):
             lit = "[" + ",".join(f"{x:.6f}" for x in v) + "]"
-            rows = con.execute("SELECT doc_name, article, article_title, category, 1 - (embedding <=> %s::vector) AS score "
+            rows = con.execute("SELECT doc_name, article, article_title, categories, 1 - (embedding <=> %s::vector) AS score "
                                "FROM rag.chunks WHERE searchable ORDER BY embedding <=> %s::vector LIMIT 3", (lit, lit)).fetchall()
             ranks = [i for i, r in enumerate(rows) if r[0] == doc and r[1].startswith(art)]
             hit1 += bool(ranks and ranks[0] == 0)

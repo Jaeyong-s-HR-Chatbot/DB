@@ -8,7 +8,7 @@
 - "제N조 삭제" 조문, 목차에서 제목만 있는 줄은 검색 대상에서 뺌
 - 1,500자가 넘는 조각은 항(①②…) 경계에서 나눔 (part 1, 2 …)
 - 칸: 팀 "데이터 형식 정의"(chunk_id, document_id, company_id, article, text, effective_date, page, source_file)
-       + doc_name, article_title, chunk_type, category(팀 카테고리), searchable
+       + doc_name, article_title, chunk_type, categories(팀 카테고리 목록, categories.py), searchable
 - 회사 이름: 원문의 "한국철도공사"를 가상 회사 "누리철도㈜"로 바꿈 (조문 구조·기준은 그대로)
 
 공개 전 확인(data/regs/report.json): 글자가 거의 없는 쪽(이미지 → OCR 필요), 조문 번호 없는 조각, 표 깨짐 의심,
@@ -24,6 +24,8 @@ from pathlib import Path
 import olefile
 import pdfplumber
 import yaml
+
+from categories import categories_of
 
 HERE = Path(__file__).parent
 RAW = HERE / "data/regs/raw"
@@ -111,13 +113,6 @@ def load_lines(reg):
 
 
 # ------------------------------------------------------------------ 자르기
-def category_of(reg, title):
-    for rule in REGS["category_rules"]:
-        if any(k in title for k in rule["keywords"]):
-            return rule["category"]
-    return reg["category"]
-
-
 def split_long(text):
     if len(text) <= MAX_CHARS:
         return [text]
@@ -194,7 +189,7 @@ def chunk_reg(reg):
                 chunk_id=f"{reg['id']}-{seq:04d}", document_id=reg["id"], company_id=COMPANY, doc_kind="내부규정",
                 doc_name=reg["name"], article=b["label"], article_title=b["title"],
                 part=pi, text=part, effective_date=effective_date(m), page=b["page"], source_file=m["file_name"],
-                chunk_type="목차" if toc else b["kind"], category=category_of(reg, b.get("cat_text", b["title"])) if b["kind"] != "전문" else reg["category"],
+                chunk_type="목차" if toc else b["kind"], categories=categories_of(reg["category"], b.get("cat_text", b["title"]) if b["kind"] != "전문" else ""),
                 searchable=searchable, tier=reg["tier"]))
     return chunks, dict(sparse_pages=sparse, pages=pages, kind=m["kind"])
 
@@ -239,7 +234,7 @@ def main():
     json.dump(docs, open(OUT / "documents.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     rep = dict(chunks=len(all_chunks), searchable=sum(c["searchable"] for c in all_chunks),
                by_type=Counter(c["chunk_type"] for c in all_chunks),
-               by_category=Counter(c["category"] for c in all_chunks if c["searchable"]),
+               by_category=Counter(k for c in all_chunks if c["searchable"] for k in c["categories"]),
                issues={k: v for k, v in issues.items()})
     json.dump(rep, open(OUT / "report.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
