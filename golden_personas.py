@@ -1,4 +1,4 @@
-"""골든셋 페르소나 3명: 기존 직원 3명을 골든셋(RAG 저장소 eval/golden_set.json) 페르소나에 맞게 바꿈.
+"""골든셋 페르소나 3명: 기존 직원 3명을 골든셋(goldenset 저장소 eval/golden_set.json, https://github.com/Jaeyong-s-HR-Chatbot/goldenset) 페르소나에 맞게 바꿈.
 
 generate.py 끝에서 자동으로 실행됨 (따로 실행: python golden_personas.py).
 - 다른 직원 데이터는 건드리지 않음. 바꾼 3명의 생년월일·부서·직급·가족과, 거기에 따라 달라지는
