@@ -50,7 +50,7 @@ function fixLabels(svg){
  mermaid.initialize({startOnLoad:false, theme:'default', nodeSpacing:90, rankSpacing:300,
   er:{useMaxWidth:false, layoutDirection:'LR', fontSize:14, entityPadding:12},
   flowchart:{nodeSpacing:90, rankSpacing:300},
-  themeVariables:{fontFamily:'-apple-system, "Apple SD Gothic Neo", sans-serif', edgeLabelBackground:'#ffffff', tertiaryColor:'#ffffff', lineColor:'#6b7a8a'},
+  themeVariables:{fontFamily:'-apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif', edgeLabelBackground:'#ffffff', tertiaryColor:'#ffffff', lineColor:'#6b7a8a'},
   themeCSS:'.labelBkg{background-color:#ffffff !important;} .edgeLabel{background-color:#ffffff !important;} .edgeLabel rect,.relationshipLabelBox{fill:#ffffff !important;opacity:1 !important;} .edgeLabel p,.edgeLabel span{background-color:#ffffff !important;color:#1f2a33 !important;font-size:15px !important;padding:2px 8px;}'
 });
  for(const name of Object.keys(defs)){
@@ -64,7 +64,7 @@ function fixLabels(svg){
    const img=new Image(); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
    await img.decode();
    const scale=2, pad=40, top=70, c=document.createElement('canvas'); c.width=(w+pad*2)*scale; c.height=(h+pad*2+top)*scale;
-   const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.scale(scale,scale); g.fillStyle='#1f2a33'; g.font='bold 26px -apple-system, "Apple SD Gothic Neo", sans-serif'; g.fillText(J.titles[name],pad,pad+28); g.fillStyle='#667'; g.font='15px -apple-system, "Apple SD Gothic Neo", sans-serif'; g.fillText('괄호 안 숫자 = 데이터 건수 · PK 기본키 · FK 외래키 · 선은 FK 연결 (2026-11-11 DB 기준)',pad,pad+56); g.drawImage(img,pad,pad+top,w,h);
+   const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.scale(scale,scale); g.fillStyle='#1f2a33'; g.font='bold 26px -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif'; g.fillText(J.titles[name],pad,pad+28); g.fillStyle='#667'; g.font='15px -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif'; g.fillText('괄호 안 숫자 = 데이터 건수 · PK 기본키 · FK 외래키 · 선은 FK 연결 (2026-11-12 DB 기준)',pad,pad+56); g.drawImage(img,pad,pad+top,w,h);
    const blob=await new Promise(r=>c.toBlob(r,'image/png'));
    const res=await fetch('/save?name=erd_'+name+'.png',{method:'POST',body:blob});
    document.getElementById('log').textContent+=name+' '+w+'x'+h+' '+res.status+'\n';
