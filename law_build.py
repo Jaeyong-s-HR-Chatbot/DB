@@ -11,12 +11,14 @@ import json
 import re
 from pathlib import Path
 
+from categories import categories_of, head_text
+
 HERE = Path(__file__).parent
 RAW = HERE / "data/laws/raw"
 OUT = HERE / "data/laws"
 MAXLEN = 1500
 
-# 법령명 → 팀 카테고리 (문서 기본값. 목록: 근태관리/수당/교육/출장/기타 복리후생/생애이벤트-…/공통)
+# 법령명 → 팀 카테고리 (문서 기본값. 조각마다 조문 제목 키워드로 더 붙임 — categories.py)
 CATEGORY = {
     "근로기준법": "공통",
     "남녀고용평등과 일ㆍ가정 양립 지원에 관한 법률": "생애이벤트-출산",
@@ -176,7 +178,8 @@ def build():
             chunks.append({"chunk_id": f"{did}-{i:04d}", "document_id": did, "company_id": "nuri", "doc_kind": "법령",
                            "doc_name": meta["title"], "article": art, "article_title": title, "part": part,
                            "text": txt, "effective_date": eff, "page": None,
-                           "source_file": f"법제처 Open API MST {meta['mst']}", "chunk_type": typ, "category": cat,
+                           "source_file": f"법제처 Open API MST {meta['mst']}", "chunk_type": typ,
+                           "categories": categories_of(cat, (title or "") + (" " + head_text(txt) if typ == "별표" else "")),
                            "searchable": typ in ("조문", "별표"), "tier": "법령"})
         mine = [c for c in chunks if c["document_id"] == did]
         docs.append({"document_id": did, "doc_name": meta["title"], "doc_kind": "법령", "tier": "법령", "category": cat,

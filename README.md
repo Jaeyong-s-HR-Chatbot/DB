@@ -53,6 +53,12 @@ python rag_embed.py                 # 7단계: torch + sentence-transformers 환
 
 근태관리 / 수당 / 교육 / 출장 / 기타 복리후생 / 생애이벤트-결혼 / 생애이벤트-출산 / 생애이벤트-휴직·퇴직 / 생애이벤트-입사·승진 / 공통 — `rules/regulations.yaml`
 
+조각 하나에 카테고리를 **여러 개** 붙여요 (`rag.chunks.categories text[]`, 규칙은 `categories.py`).
+- 조문 제목(별표·서식은 앞 4줄)에 키워드가 맞는 카테고리를 전부 + 문서 기본 카테고리(공통이면 안 붙임). 아무것도 없으면 `공통`
+- 예: 취업규칙 별표 3(청원휴가) → `[생애이벤트-결혼, 근태관리]`, 복지후생 규정 제12조(경조비) → `[생애이벤트-결혼, 기타 복리후생]`
+- 검색: `WHERE searchable AND categories && ARRAY['근태관리','공통']` (하나라도 겹치면 통과)
+- 이미 만든 조각 파일만 다시 계산: `.venv/bin/python rag_categories.py` → 조각 파일 + `deploy/initdb/03_categories.sql`
+
 ## 저장소에 없는 것
 
 - `pgdata/` (DB 파일, 대신 `deploy/initdb/01_hrdb.sql.gz` 덤프로 배포), 규정 원문 파일(`data/regs/raw`, `rag_fetch.py`로 다시 받음), 임베딩 벡터(`rag_embed.py`로 다시 만듦), zip 묶음
