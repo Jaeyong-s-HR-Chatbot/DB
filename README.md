@@ -9,7 +9,7 @@ HR 복리후생 챗봇 팀 프로젝트의 **데이터·DB 쪽** 저장소입니
 | 단계 | 파일 | 하는 일 |
 | --- | --- | --- |
 | 1 기준표 | `rules/rules.json` | 규정 숫자(경조금·수당·연차 등)를 한 파일에 모음. 생성기·검사기·챗봇 계산이 같은 값을 씀 |
-| 2 가상 임직원 | `generate.py` | 800명(사번 E1001~E1800, 전원 정규직) + 1~2년치 인사 기록 → `data/hr/*.csv` 15개 + `data/extra/attendance.csv`. seed 42 고정 |
+| 2 가상 임직원 | `generate.py` | 800명(사번 E1001~E1800, 전원 정규직) + 1~2년치 인사 기록 → `data/hr/*.csv` 15개 + `data/extra/attendance.csv`. seed 42 고정. 끝에 `golden_personas.py`가 직원 3명을 RAG 골든셋 페르소나로 바꿈(E1634·E1033·E1768 → `data/meta/golden_personas.json`) |
 | 3 정합성 검사 | `validate.py`, `test_validate.py` | 테이블끼리 숫자가 맞는지 18개 검사, 오류 11종 주입 시험 |
 | 4 DB 준비 | `db_setup.py` | pgserver로 로컬 PostgreSQL 16 + pgvector, DB `hrdb`, 스키마 erp / hr / rag / app |
 | 5 회사 DB 흉내 | `load_erp.py`, `mapping/nuri.yaml` | CSV를 회사식 이름(사원·사원번호)·코드값·8자리 날짜로 바꿔 `erp`에 적재, 왕복 검사 |

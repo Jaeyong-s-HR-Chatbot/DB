@@ -44,8 +44,17 @@ def connect(srv, dbname=DB_NAME):
     if HRDB_URL:
         u = urlsplit(HRDB_URL)
         return psycopg.connect(urlunsplit(u._replace(path=f"/{dbname}")), autocommit=True)
-    uri = srv.get_uri()  # postgresql://postgres:@/postgres?host=...
-    return psycopg.connect(uri.replace("/postgres?", f"/{dbname}?"), autocommit=True)
+    # 맥·리눅스: postgresql://postgres:@/postgres?host=/소켓경로, 윈도우: postgresql://postgres:@127.0.0.1:포트/postgres
+    u = urlsplit(srv.get_uri())
+    return psycopg.connect(urlunsplit(u._replace(path=f"/{dbname}")), autocommit=True)
+
+
+def host_args(srv):
+    """pg_dump·psql 에 넘길 접속 인자 (맥·리눅스는 소켓 폴더, 윈도우는 127.0.0.1 + 포트)."""
+    u = urlsplit(srv.get_uri())
+    if "host=" in u.query:
+        return ["-h", u.query.split("host=")[1].split("&")[0]]
+    return ["-h", u.hostname, "-p", str(u.port)]
 
 
 def main():

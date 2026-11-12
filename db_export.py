@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pgserver
 
-from db_setup import DB_NAME, connect, get_server
+from db_setup import DB_NAME, connect, get_server, host_args
 
 HERE = Path(__file__).parent
 OUT = HERE / "deploy/initdb"
@@ -32,8 +32,7 @@ def counts(con):
 
 def main():
     srv = get_server()
-    uri = srv.get_uri()
-    host = uri.split("host=")[1]
+    host = host_args(srv)
     OUT.mkdir(parents=True, exist_ok=True)
 
     (OUT / "00_extensions.sql").write_text(
@@ -48,7 +47,7 @@ def main():
         "GRANT SELECT ON ALL TABLES IN SCHEMA erp_ro TO hr_connector;\n", encoding="utf-8")
 
     dump = OUT / "01_hrdb.sql"
-    cmd = [str(BIN / "pg_dump"), "-h", host, "-U", "postgres", "-d", DB_NAME, "--no-owner", "--no-privileges",
+    cmd = [str(BIN / "pg_dump"), *host, "-U", "postgres", "-d", DB_NAME, "--no-owner", "--no-privileges",
            "--quote-all-identifiers", "-f", str(dump)] + sum((["-n", s] for s in SCHEMAS), [])
     subprocess.run(cmd, check=True)
     with open(dump, "rb") as f, gzip.open(str(dump) + ".gz", "wb", compresslevel=9) as g:
@@ -60,7 +59,7 @@ def main():
     with connect(srv, "postgres") as con:
         con.execute(f'DROP DATABASE IF EXISTS "{CHECK_DB}"')
         con.execute(f'CREATE DATABASE "{CHECK_DB}"')
-    psql = [str(BIN / "psql"), "-h", host, "-U", "postgres", "-d", CHECK_DB, "-q", "-v", "ON_ERROR_STOP=1"]
+    psql = [str(BIN / "psql"), *host, "-U", "postgres", "-d", CHECK_DB, "-q", "-v", "ON_ERROR_STOP=1"]
     subprocess.run(psql + ["-f", str(OUT / "00_extensions.sql")], check=True)
     with gzip.open(str(dump) + ".gz", "rb") as g:
         subprocess.run(psql, input=g.read(), check=True, stdout=subprocess.DEVNULL)

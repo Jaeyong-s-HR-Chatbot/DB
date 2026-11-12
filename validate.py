@@ -234,7 +234,7 @@ for p in T["payroll"]:
     want = {
         "base_pay": bp, "duty_allowance": duty, "shift_allowance": shift, "long_service_allowance": lsa,
         "ordinary_wage": ordinary, "meal_allowance": RULES["meal_allowance"]["amount"],
-        "family_allowance": family_allowance(fam_by[p["emp_id"]], ym),
+        "family_allowance": family_allowance(fam_by[p["emp_id"]], ym, p["grade"]),
         "overtime_pay": won10(hw * OT["overtime_rate"] * ot), "night_pay": won10(hw * OT["night_extra_rate"] * night),
         "holiday_pay": won10(hw * OT["holiday_rate"] * float(p["holiday_hours"])),
         "holiday_bonus": won10(bp * RULES["bonus"]["holiday_rate"]) if ym in RULES["bonus"]["holiday_months"] else 0,
