@@ -1,6 +1,6 @@
 # DB 배포 (누리철도 HR DB)
 
-내 컴퓨터에서 만든 hrdb(가상 임직원 데이터 + 규정 조문 조각 + 임베딩)를 팀원 누구나 같은 상태로 띄우는 방법입니다.
+내 컴퓨터에서 만든 hrdb(가상 임직원 데이터 + 규정·법령 조문 조각 + 임베딩)를 팀원 누구나 같은 상태로 띄우는 방법입니다.
 
 ## 방법 1. Docker (추천)
 
@@ -30,7 +30,7 @@ psql -d hrdb -f deploy/initdb/02_grants.sql
 | 01_hrdb.sql.gz | 스키마 erp(회사 DB 흉내)·erp_ro(읽기 전용 뷰)·hr(표준 형식)·rag(규정 조각+임베딩)·app(동기화 기록) 전체 |
 | 02_grants.sql | hr_connector는 erp_ro 뷰 SELECT만 |
 
-- 테이블 35개, 약 49만 행, 규정 조각 임베딩(BGE-M3, 1024차원) 1,099개
+- 테이블 35개, 약 49만 행, 규정·법령 조각 임베딩(BGE-M3, 1024차원) 2,583개, 문서 46건(규정 33 + 법령 13), 조각 2,915개
 - 만든 방법: `.venv/bin/python db_export.py` — 덤프 후 새 DB에 되살려 모든 테이블 건수가 같은지 자동 확인
 - 챗봇 조회 도구는 **hr**, 규정 검색은 **rag.chunks** (`embedding <=> 질문벡터`, `WHERE searchable AND category = …`)만 읽으면 됩니다
 - 모든 인물·값은 가상 데이터입니다. 비밀번호 hrpass는 로컬 개발용입니다

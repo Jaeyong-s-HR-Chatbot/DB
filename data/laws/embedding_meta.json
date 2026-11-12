@@ -1,0 +1,8 @@
+{
+ "model": "BAAI/bge-m3",
+ "dim": 1024,
+ "count": 1459,
+ "normalized": true,
+ "input": "규정명 조문 제목\\n본문",
+ "device": "mps"
+}

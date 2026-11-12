@@ -8,3 +8,11 @@ backup_*/
 data/regs/raw/
 data/regs/embeddings.npy
 data/regs/query_vectors.json
+# 법령: 인증키·원본 응답·임베딩은 올리지 않음 (law_fetch_api.py / rag_embed.py data/laws 로 다시 만듦)
+.env
+data/laws/raw/
+data/laws/api/*.json
+!data/laws/api/index.json
+data/laws/attach/
+data/laws/attach_api/
+data/laws/embeddings.npy

@@ -1,0 +1,75 @@
+<!doctype html><html><head><meta charset="utf-8"><title>ERD render</title>
+<style>body{margin:0;background:#fff;font-family:-apple-system,"Apple SD Gothic Neo",sans-serif} .d{padding:24px;background:#fff} h1{font-size:20px;margin:16px 24px 0}</style><style>.edgeLabel,.edgeLabel rect,.labelBkg{background-color:#fff !important;fill:#fff !important;opacity:1 !important} .edgeLabel span,.edgeLabel p{font-size:15px !important;color:#1f2a33 !important;padding:2px 8px;background:#fff !important}</style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script></head>
+<body><div id="out"></div><pre id="log"></pre>
+<script>
+
+function fixLabels(svg){
+  const paths=[...svg.querySelectorAll('path.relationshipLine')];
+  const texts=[...svg.querySelectorAll('text.relationshipLabel')];
+  const boxes=[...svg.querySelectorAll('rect.relationshipLabelBox')];
+  if(!paths.length||paths.length!==texts.length) return {fixed:0,note:'pair mismatch '+paths.length+'/'+texts.length};
+  // 선 위의 점들 (4px 간격)
+  const pts=paths.map(p=>{const L=p.getTotalLength(),a=[];for(let d=0;d<=L;d+=4){const q=p.getPointAtLength(d);a.push([q.x,q.y]);}return {L,a};});
+  // 표(entity) 영역
+  const ents=[...svg.querySelectorAll('g[id^="entity-"]')].map(g=>{const b=g.getBBox();const m=(g.getAttribute('transform')||'').match(/translate\(([-\d.]+)[ ,]+([-\d.]+)\)/);const tx=m?+m[1]:0,ty=m?+m[2]:0;return [b.x+tx,b.y+ty,b.x+tx+b.width,b.y+ty+b.height];});
+  const placed=[];let fixed=0,bad=0;
+  const hit=(x0,y0,x1,y1,skipIdx)=>{
+    const M=5;
+    for(const e of ents) if(x1>e[0]-M&&x0<e[2]+M&&y1>e[1]-M&&y0<e[3]+M) return true;
+    for(const r of placed) if(x1>r[0]-M&&x0<r[2]+M&&y1>r[1]-M&&y0<r[3]+M) return true;
+    for(let k=0;k<pts.length;k++) for(const q of pts[k].a) if(q[0]>x0-M&&q[0]<x1+M&&q[1]>y0-M&&q[1]<y1+M) return true;
+    return false;
+  };
+  paths.forEach((p,i)=>{
+    const w=+boxes[i].getAttribute('width')+8,h=+boxes[i].getAttribute('height')+4,L=pts[i].L;
+    let best=null;
+    const ts=[];for(let t=0.5;t<=0.82;t+=0.04){ts.push(t);if(t>0.5)ts.push(1-t);}
+    outer: for(const t of ts){
+      const c=p.getPointAtLength(L*t),c2=p.getPointAtLength(Math.min(L,L*t+3)),c1=p.getPointAtLength(Math.max(0,L*t-3));
+      let dx=c2.x-c1.x,dy=c2.y-c1.y;const n=Math.hypot(dx,dy)||1;dx/=n;dy/=n;
+      const nx=-dy,ny=dx;
+      for(const off of [h/2+6,-(h/2+6),h/2+16,-(h/2+16),h/2+30,-(h/2+30)]){
+        const cx=c.x+nx*off, cy=c.y+ny*off;
+        const x0=cx-w/2,y0=cy-h/2,x1=cx+w/2,y1=cy+h/2;
+        if(!hit(x0,y0,x1,y1)){best=[cx,cy,x0,y0,x1,y1];break outer;}
+      }
+    }
+    if(!best){bad++;const c=p.getPointAtLength(L*0.5);best=[c.x,c.y-(h/2+6),c.x-w/2,c.y-(h/2+6)-h/2,c.x+w/2,c.y-(h/2+6)+h/2];}
+    placed.push([best[2],best[3],best[4],best[5]]);
+    texts[i].setAttribute('x',best[0]);texts[i].setAttribute('y',best[1]);
+    boxes[i].setAttribute('x',best[2]+4);boxes[i].setAttribute('y',best[3]+2);boxes[i].setAttribute('width',w-8);boxes[i].setAttribute('height',h-4);
+    boxes[i].style.fill='#ffffff';boxes[i].style.stroke='#c7d0da';boxes[i].style.opacity='1';boxes[i].setAttribute('rx','3');
+    texts[i].style.fill='#1f2a33';texts[i].setAttribute('text-anchor','middle');texts[i].setAttribute('dominant-baseline','central');
+    fixed++;
+  });
+  return {fixed,bad};
+}
+(async()=>{
+ const J=await (await fetch('erd_mermaid2.json?'+Date.now())).json(); const defs=J.defs;
+ mermaid.initialize({startOnLoad:false, theme:'default', nodeSpacing:90, rankSpacing:300,
+  er:{useMaxWidth:false, layoutDirection:'LR', fontSize:14, entityPadding:12},
+  flowchart:{nodeSpacing:90, rankSpacing:300},
+  themeVariables:{fontFamily:'-apple-system, "Apple SD Gothic Neo", sans-serif', edgeLabelBackground:'#ffffff', tertiaryColor:'#ffffff', lineColor:'#6b7a8a'},
+  themeCSS:'.labelBkg{background-color:#ffffff !important;} .edgeLabel{background-color:#ffffff !important;} .edgeLabel rect,.relationshipLabelBox{fill:#ffffff !important;opacity:1 !important;} .edgeLabel p,.edgeLabel span{background-color:#ffffff !important;color:#1f2a33 !important;font-size:15px !important;padding:2px 8px;}'
+});
+ for(const name of Object.keys(defs)){
+   try{
+   const {svg}=await mermaid.render('m_'+name, defs[name]);
+   const box=document.createElement('div'); box.className='d'; box.innerHTML=svg; document.getElementById('out').appendChild(box);
+   const el=box.querySelector('svg'); const fl=fixLabels(el); document.getElementById('log').textContent+=name+' labels '+JSON.stringify(fl)+'\n'; const bb=el.getBBox(); const vb=el.viewBox.baseVal;
+   const w=Math.ceil(vb.width||bb.width), h=Math.ceil(vb.height||bb.height);
+   el.setAttribute('width',w); el.setAttribute('height',h);
+   const xml=new XMLSerializer().serializeToString(el);
+   const img=new Image(); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml);
+   await img.decode();
+   const scale=2, pad=40, top=70, c=document.createElement('canvas'); c.width=(w+pad*2)*scale; c.height=(h+pad*2+top)*scale;
+   const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.scale(scale,scale); g.fillStyle='#1f2a33'; g.font='bold 26px -apple-system, "Apple SD Gothic Neo", sans-serif'; g.fillText(J.titles[name],pad,pad+28); g.fillStyle='#667'; g.font='15px -apple-system, "Apple SD Gothic Neo", sans-serif'; g.fillText('괄호 안 숫자 = 데이터 건수 · PK 기본키 · FK 외래키 · 선은 FK 연결 (2026-11-11 DB 기준)',pad,pad+56); g.drawImage(img,pad,pad+top,w,h);
+   const blob=await new Promise(r=>c.toBlob(r,'image/png'));
+   const res=await fetch('/save?name=erd_'+name+'.png',{method:'POST',body:blob});
+   document.getElementById('log').textContent+=name+' '+w+'x'+h+' '+res.status+'\n';
+   }catch(e){document.getElementById('log').textContent+=name+' ERROR '+e+'\n';}
+ }
+ document.title='done';
+})();
+</script></body></html>

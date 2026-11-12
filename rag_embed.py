@@ -1,12 +1,13 @@
 """7단계-3 임베딩: data/regs/chunks.jsonl 의 검색 대상 조각을 BGE-M3(로컬)로 1024차원 벡터로 바꿔 data/regs/embeddings.npy 저장.
 
-실행 (torch가 있는 환경): ~/rag_local/.venv/bin/python rag_embed.py
+실행 (torch가 있는 환경): ~/rag_local/.venv/bin/python rag_embed.py [data/regs | data/laws]
 - 모델: BAAI/bge-m3 (기획서 결정, 다국어·한국어 지원, 처음 한 번 약 2.3GB 다운로드 후 로컬에서만 실행)
 - 넣는 글: "규정명 조문 제목\n본문" (규정명·조문 제목도 검색에 걸리게)
 - 벡터는 길이 1로 정규화 → pgvector 코사인 거리로 검색
 - 순서: chunks.jsonl 의 searchable=true 조각 순서 그대로 (embedding_ids.json 에 chunk_id 목록)
 """
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -15,7 +16,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 HERE = Path(__file__).parent
-REG = HERE / "data/regs"
+REG = HERE / (sys.argv[1] if len(sys.argv) > 1 else "data/regs")  # 인자로 data/laws 를 주면 법령 조각만 임베딩
 MODEL = "BAAI/bge-m3"
 
 
