@@ -4,7 +4,8 @@
 
 자르는 규칙
 - 「제N조(제목)」마다 한 조각. 부칙 안의 조는 "부칙 제N조"로 따로 표시
-- [별표 N]은 별도 조각 (표 → 검색 대상), [별지 서식]은 신청 양식이라 검색 대상에서 뺌 (searchable=false)
+- [별표 N]은 별도 조각 (표 → 검색 대상), [별지 서식]은 신청 양식이라 원문은 검색 대상에서 뺌 (searchable=false)
+  대신 서식마다 이름·관련 조항·기재 항목만 담은 '서식안내' 조각을 검색 대상으로 추가 (rag_forms.py)
 - "제N조 삭제" 조문, 목차에서 제목만 있는 줄은 검색 대상에서 뺌
 - 1,500자가 넘는 조각은 항(①②…) 경계에서 나눔 (part 1, 2 …)
 - 칸: 팀 "데이터 형식 정의"(chunk_id, document_id, company_id, article, text, effective_date, page, source_file)
@@ -26,6 +27,8 @@ import pdfplumber
 import yaml
 
 from categories import categories_of
+from rag_forms import with_guides
+from rag_supplements import with_supplements
 
 HERE = Path(__file__).parent
 RAW = HERE / "data/regs/raw"
@@ -167,7 +170,8 @@ def chunk_reg(reg):
         elif (mm := BYEOLPYO.match(s)) and len(s) < 120 and (s[mm.end():mm.end() + 1] or " ") not in "에와과를은는이가및":
             in_buchik = False
             start("별표", f"별표 {mm.group(1).replace(' ', '')}" if mm.group(1) else "별표", s, page)
-        elif (mm := BYEOLJI.match(s)) and len(s) < 120 and (s[mm.end():mm.end() + 1] or " ") not in "에와과를은는이가및":
+        elif ((mm := BYEOLJI.match(s)) and len(s) < 120 and (s[mm.end():mm.end() + 1] or " ") not in "에와과를은는이가및"
+              and not re.match(r"\s*서\s*식\s*(?:의|에|을|를|으로|및|과|와)", s[mm.end():])):  # "별지 제2호서식의 … 따라" 같은 본문 문장은 서식 머리가 아님
             in_buchik = False
             start("서식", f"별지 {mm.group(1).replace(' ', '')}", s, page)
         cur["lines"].append(s)
@@ -228,6 +232,11 @@ def main():
                          file_kind=info["kind"], pages=info["pages"], chunks=len(ch),
                          searchable=sum(c["searchable"] for c in ch), chars=sum(len(c["text"]) for c in ch),
                          effective_date=ch[0]["effective_date"] if ch else None, source_file=MANIFEST[reg["id"]]["file_name"]))
+    all_chunks = with_guides(all_chunks)  # 서식마다 검색용 '서식안내' 조각 추가 (rag_forms.py)
+    all_chunks, docs = with_supplements(all_chunks, docs)  # 원문에 없는 팀 가정 기준 조각 (rag_supplements.py)
+    for d in docs:
+        mine = [c for c in all_chunks if c["document_id"] == d["document_id"]]
+        d.update(chunks=len(mine), searchable=sum(c["searchable"] for c in mine), chars=sum(len(c["text"]) for c in mine))
     with open(OUT / "chunks.jsonl", "w", encoding="utf-8") as f:
         for c in all_chunks:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")
