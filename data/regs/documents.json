@@ -460,5 +460,19 @@
   "chars": 35198,
   "effective_date": "2015-02-27",
   "source_file": "문서관리 규정(기타, 20150227).hwp"
+ },
+ {
+  "document_id": "S01",
+  "doc_name": "팀 가정 기준",
+  "doc_kind": "내부규정",
+  "tier": "가정",
+  "category": "기타 복리후생",
+  "file_kind": "code",
+  "pages": null,
+  "chunks": 1,
+  "searchable": 1,
+  "chars": 195,
+  "effective_date": "2026-11-18",
+  "source_file": "rag_supplements.py"
  }
 ]

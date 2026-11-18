@@ -28,6 +28,7 @@ import yaml
 
 from categories import categories_of
 from rag_forms import with_guides
+from rag_supplements import with_supplements
 
 HERE = Path(__file__).parent
 RAW = HERE / "data/regs/raw"
@@ -232,6 +233,7 @@ def main():
                          searchable=sum(c["searchable"] for c in ch), chars=sum(len(c["text"]) for c in ch),
                          effective_date=ch[0]["effective_date"] if ch else None, source_file=MANIFEST[reg["id"]]["file_name"]))
     all_chunks = with_guides(all_chunks)  # 서식마다 검색용 '서식안내' 조각 추가 (rag_forms.py)
+    all_chunks, docs = with_supplements(all_chunks, docs)  # 원문에 없는 팀 가정 기준 조각 (rag_supplements.py)
     for d in docs:
         mine = [c for c in all_chunks if c["document_id"] == d["document_id"]]
         d.update(chunks=len(mine), searchable=sum(c["searchable"] for c in mine), chars=sum(len(c["text"]) for c in mine))
