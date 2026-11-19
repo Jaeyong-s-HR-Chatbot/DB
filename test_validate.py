@@ -1,8 +1,9 @@
 """오류 주입 시험: 복사본에 오류를 하나씩 넣고 validate.py가 잡는지 확인. 실행: .venv/bin/python test_validate.py"""
-import csv, json, shutil, subprocess, sys, tempfile
+import csv, json, os, shutil, subprocess, sys, tempfile
 from pathlib import Path
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # 윈도우 cp949 창에서도 ✅·❌ 출력
 SRC = Path(__file__).parent
-PY = str(SRC / ".venv/bin/python")
+PY = sys.executable   # 지금 실행 중인 파이썬 (맥·리눅스 .venv/bin, 윈도우 .venv\Scripts 모두)
 
 def rw(root, name, fn, folder="hr"):
     p = root / "data" / folder / f"{name}.csv"
@@ -37,7 +38,8 @@ for name, (table, fn) in CASES.items():
     for f in ["common.py", "validate.py"]: shutil.copy(SRC / f, tmp / f)
     shutil.copytree(SRC / "rules", tmp / "rules"); shutil.copytree(SRC / "data", tmp / "data")
     rw(tmp, table, fn)
-    out = subprocess.run([PY, "validate.py"], cwd=tmp, capture_output=True, text=True).stdout
+    out = subprocess.run([PY, "validate.py"], cwd=tmp, capture_output=True, text=True, encoding="utf-8",
+                         env={**os.environ, "PYTHONIOENCODING": "utf-8"}).stdout   # 윈도우 기본 cp949 와 섞이지 않게
     fails = [l for l in out.splitlines() if l.startswith("[FAIL]")]
     ok = bool(fails); caught += ok
     print(f"{'✅ 잡음' if ok else '❌ 놓침'} | {name}")
