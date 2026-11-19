@@ -7,6 +7,7 @@ pgserver 에 들어 있는 PostgreSQL 16 + pgvector 를 DB/pgdata 폴더로 켭�
   .venv\\Scripts\\python local_db.py load     # 처음 한 번: 팀 덤프(deploy/initdb)로 hrdb 만들기
   .venv\\Scripts\\python local_db.py stop     # 끄기
   .venv\\Scripts\\python local_db.py status
+  (맥·리눅스는 .venv/bin/python local_db.py ... 로 같은 명령)
 
 접속: postgresql://hr:hrpass@localhost:5433/hrdb  (로컬 접속만 허용, 가상 데이터 전용)
 """

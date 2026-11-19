@@ -29,7 +29,7 @@ docker compose up -d        # PostgreSQL 16 + pgvector, 접속 postgresql://hr:h
 
 스크립트를 이 DB에 붙일 때는 `export HRDB_URL=postgresql://hr:hrpass@localhost:5432/hrdb` (없으면 pgserver로 내 컴퓨터에 띄움)
 
-### Docker 없이 내 컴퓨터에서 (윈도우 포함)
+### Docker 없이 내 컴퓨터에서 (윈도우·맥·리눅스)
 
 Docker가 없거나, 이미 깔린 PostgreSQL의 postgres 비밀번호를 몰라도 돼요. `pgserver` 패키지에 들어 있는 PostgreSQL 16 + pgvector를 `pgdata/` 폴더로 따로 켭니다. 이미 깔린 PostgreSQL(5432)과 겹치지 않게 **포트 5433**을 씁니다.
 
@@ -39,6 +39,16 @@ py -3.12 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
 .venv\Scripts\python local_db.py start     # 컴퓨터를 다시 켠 뒤에는 이것만
 .venv\Scripts\python local_db.py status    # 켜짐/꺼짐
 .venv\Scripts\python local_db.py stop
+```
+
+맥·리눅스는 이렇게 해요 (`.exe` 처리는 `local_db.py`가 알아서 해요).
+
+```bash
+python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python local_db.py load      # 처음 한 번
+.venv/bin/python local_db.py start     # 컴퓨터를 다시 켠 뒤에는 이것만
+.venv/bin/python local_db.py status
+.venv/bin/python local_db.py stop
 ```
 
 - 접속: `postgresql://hr:hrpass@localhost:5433/hrdb` (backend `.env`의 `HRDB_URL`에 그대로 넣기)
