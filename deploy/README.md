@@ -13,6 +13,8 @@ docker compose logs -f hrdb          # "database system is ready" 나오면 완�
 - 처음부터 다시: `docker compose down -v && docker compose up -d`
 - 저장소 스크립트를 이 DB에 붙이기: `export HRDB_URL=postgresql://hr:hrpass@localhost:5432/hrdb` 후 `connector.py`, `db_viewer.py` 등 실행
 
+> 이미 띄워 둔 DB에 퇴직연금만 추가: `gunzip -c deploy/initdb/04_pension.sql.gz | docker exec -i nuri-hrdb psql -U hr -d hrdb` (이미 있으면 `DROP SCHEMA pension CASCADE;` 후)
+
 > 이미 띄워 둔 DB가 있으면 카테고리 변경만 적용: `docker exec -i nuri-hrdb psql -U hr -d hrdb < deploy/initdb/03_categories.sql`
 > (initdb 폴더는 DB를 처음 만들 때만 실행돼요. 처음부터 다시 만들어도 돼요: `docker compose down -v && docker compose up -d`)
 
@@ -24,6 +26,7 @@ psql -d hrdb -f deploy/initdb/00_extensions.sql
 gunzip -c deploy/initdb/01_hrdb.sql.gz | psql -d hrdb
 psql -d hrdb -f deploy/initdb/02_grants.sql
 psql -d hrdb -f deploy/initdb/03_categories.sql
+gunzip -c deploy/initdb/04_pension.sql.gz | psql -d hrdb      # 퇴직연금(가상) 데이터
 ```
 
 ## 들어 있는 것 (deploy/initdb)
@@ -34,6 +37,7 @@ psql -d hrdb -f deploy/initdb/03_categories.sql
 | 01_hrdb.sql.gz | 스키마 erp(회사 DB 흉내)·erp_ro(읽기 전용 뷰)·hr(표준 형식)·rag(규정 조각+임베딩)·app(동기화 기록) 전체 |
 | 02_grants.sql | hr_connector는 erp_ro 뷰 SELECT만 |
 | 03_categories.sql | `rag.chunks.category`(1개) → `categories`(여러 개). `rag_categories.py`가 만듦 |
+| 04_pension.sql.gz | 퇴직연금(가상) 스키마 `pension`: 테이블 10개(가입 800명, 납입, 보유 상품, 거래, 상품·운용사·기준가 등) + 뷰 1개(`v_db_severance_estimate`, DB형 퇴직금 추정). 01 뒤에 실행돼야 해요(뷰가 `hr.payroll`을 씀). Docker는 파일 이름순으로 자동 실행. 자세한 규칙은 `data/pension/README_퇴직연금_데이터.md` |
 
 - 테이블 35개, 약 49만 행, 규정·법령 조각 임베딩(BGE-M3, 1024차원) 2,583개, 문서 46건(규정 33 + 법령 13), 조각 2,915개
 - 만든 방법: `.venv/bin/python db_export.py` — 덤프 후 새 DB에 되살려 모든 테이블 건수가 같은지 자동 확인

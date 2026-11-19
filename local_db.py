@@ -66,6 +66,10 @@ def load():
         psql("hrdb", user="hr", input=f.read(), stdout=subprocess.DEVNULL)
     psql("hrdb", "-f", str(INIT / "02_grants.sql"), user="hr")
     psql("hrdb", "-f", str(INIT / "03_categories.sql"), user="hr")
+    pension = INIT / "04_pension.sql.gz"   # 퇴직연금(가상) pension 스키마. 01 뒤에 실행 (뷰가 hr.payroll 을 씀)
+    if pension.exists():
+        with gzip.open(pension, "rb") as f:
+            psql("hrdb", user="hr", input=f.read(), stdout=subprocess.DEVNULL)
     print("완료:", URL)
 
 
