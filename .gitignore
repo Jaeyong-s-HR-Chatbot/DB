@@ -16,3 +16,7 @@ data/laws/api/*.json
 data/laws/attach/
 data/laws/attach_api/
 data/laws/embeddings.npy
+# 항 단위 조각: 임베딩 벡터·입력 글 캐시는 올리지 않음 (rag_embed_hang_colab.ipynb 로 다시 만듦)
+data/hang/embeddings.npy
+data/hang/embedding_texts.json
+data/hang/load.log
