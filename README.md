@@ -16,6 +16,7 @@ HR 복리후생 챗봇 팀 프로젝트의 **데이터·DB 쪽** 저장소입니
 | 6 커넥터 | `connector.py`, `mapping/standard.yaml` | 읽기 전용 뷰(`erp_ro`) → 연결표로 변환 → `hr_staging` → 검사 통과 시 `hr`로 교체, `app.sync_log` 기록 |
 | 7 규정·법령 RAG | `rag_fetch.py` → `rag_build.py` → `rag_embed.py` → `rag_load.py` → `rag_search.py` | ALIO 코레일 규정 33건 → 조문 조각(`data/regs/chunks.jsonl`) → BGE-M3 임베딩 → `rag` 스키마. 법령 13건은 법제처 Open API로 받아 같은 표에 넣음(`doc_kind='법령'`, 아래 참고) |
 | 8 항 단위 조각 | `rag_rechunk.py` → `rag_embed_hang_colab.ipynb` → `rag_load_hang.py` | 조문 조각을 항(①②…) 단위로 다시 잘라 `data/hang/` → Colab GPU로 BGE-M3 임베딩 → `rag.chunks` 교체 + `rag.articles`(조문 원문). 아래 "항 단위 조각" 참고 |
+| 9 퇴직연금(가상) | `pension/` (`gen_pension.py` → `pension_sim.py` → `pension_build.py` → `pension_load.py`, 검사 `validate_pension.py`) | 가상 운용사 4곳·상품 65개, 직원 800명의 DB/DC/미가입, 납입·보유·거래·이벤트 → `data/pension/build/*.csv` → `pension` 스키마(테이블 10 + 뷰 1). 골든셋 정답 숫자는 `eval/pension/build_pension_golden.py`가 DB에서 다시 계산. 규칙·검사는 `data/pension/README_퇴직연금_데이터.md` |
 | DB 배포 | `docker-compose.yml`, `deploy/`, `db_export.py` | 덤프(8MB)로 팀원 누구나 같은 hrdb를 띄움 → [deploy/README.md](deploy/README.md) |
 | 내 컴퓨터 DB | `local_db.py` | Docker·PostgreSQL 비밀번호 없이 hrdb를 띄움 (포트 5433). 아래 "Docker 없이 내 컴퓨터에서" 참고 |
 | 조회 화면 | `db_viewer.py` | http://127.0.0.1:8765 에서 DB 직접 조회 (읽기 전용 SQL) |
@@ -28,7 +29,7 @@ docker compose up -d        # PostgreSQL 16 + pgvector, 접속 postgresql://hr:h
 
 스크립트를 이 DB에 붙일 때는 `export HRDB_URL=postgresql://hr:hrpass@localhost:5432/hrdb` (없으면 pgserver로 내 컴퓨터에 띄움)
 
-### Docker 없이 내 컴퓨터에서 (윈도우 포함)
+### Docker 없이 내 컴퓨터에서 (윈도우·맥·리눅스)
 
 Docker가 없거나, 이미 깔린 PostgreSQL의 postgres 비밀번호를 몰라도 돼요. `pgserver` 패키지에 들어 있는 PostgreSQL 16 + pgvector를 `pgdata/` 폴더로 따로 켭니다. 이미 깔린 PostgreSQL(5432)과 겹치지 않게 **포트 5433**을 씁니다.
 
@@ -38,6 +39,16 @@ py -3.12 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
 .venv\Scripts\python local_db.py start     # 컴퓨터를 다시 켠 뒤에는 이것만
 .venv\Scripts\python local_db.py status    # 켜짐/꺼짐
 .venv\Scripts\python local_db.py stop
+```
+
+맥·리눅스는 이렇게 해요 (`.exe` 처리는 `local_db.py`가 알아서 해요).
+
+```bash
+python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python local_db.py load      # 처음 한 번
+.venv/bin/python local_db.py start     # 컴퓨터를 다시 켠 뒤에는 이것만
+.venv/bin/python local_db.py status
+.venv/bin/python local_db.py stop
 ```
 
 - 접속: `postgresql://hr:hrpass@localhost:5433/hrdb` (backend `.env`의 `HRDB_URL`에 그대로 넣기)
