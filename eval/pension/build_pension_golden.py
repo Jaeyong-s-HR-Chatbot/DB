@@ -1,6 +1,6 @@
 """퇴직연금 골든셋 20문항 생성 → eval/pension/pension_golden_set.json · .csv · pension_security_cases.jsonl
 
-형식은 GitHub 팀 골든셋(Jaeyong-s-HR-Chatbot/RAG-hyerim, eval/golden/golden_set.json, 버전 2026-11-18)과 같음:
+형식은 GitHub 팀 골든셋(Jaeyong-s-HR-Chatbot/RAG, eval/golden/golden_set.json, 버전 2026-11-18)과 같음:
   같은 필드(id·persona·category·question·reference_answer·basis·type·key_facts·must_not_include·gold_chunks·document_ids·
   needs_hr_data·expected_hr_tables·calculation·uncertain·multi_hop·as_of·emp_id·expected_hr), 같은 페르소나(P1 E1634 · P2 E1033 · P3 E1768),
   같은 조각 ID(rag.chunks: r09 퇴직급여 지급 규정, r10 시행세칙, L01 근로기준법, L06 근로자퇴직급여 보장법 시행령).
@@ -245,7 +245,7 @@ for it in items:
 # ------------------------------------------------------------------ 저장
 doc = dict(
     name="누리철도 HR 챗봇 퇴직연금 골든셋", version=AS_OF,
-    source="팀 골든셋(Jaeyong-s-HR-Chatbot/RAG-hyerim eval/golden, 2026-11-18)과 같은 형식. 질문은 퇴직연금 확장(팀 확정 전)용 추가분",
+    source="팀 골든셋(Jaeyong-s-HR-Chatbot/RAG eval/golden, 2026-11-18)과 같은 형식. 질문은 퇴직연금 확장(팀 확정 전)용 추가분",
     id_reference="document_id / chunk_id = HR DB rag.documents / rag.chunks (규정 r01~r33, 법령 L01~L13, 팀 가정 기준 S01). 본인 데이터는 pension.* · hr.*",
     personas={k: dict(emp_id=v, name=emp[v][0], position=emp[v][3], 제도=plan[v][0], 사업자=prov[plan[v][1]][0]) for k, v in P.items()},
     persona_note="페르소나·사번은 팀 골든셋과 동일(E1634·E1033·E1768). 퇴직연금 제도·사업자·적립금은 pension 스키마의 가상 데이터",
