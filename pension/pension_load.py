@@ -90,14 +90,17 @@ CHECKS = [  # (이름, 위반 행을 세는 SQL — 0 이어야 통과)
 ]
 
 
+# 퇴직금 추정 기준일: 골든셋(eval/pension/build_pension_golden.py AS_OF)과 같은 날로 고정. current_date 를 쓰면 날마다 값이 바뀜
+SEVERANCE_AS_OF = "2026-11-19"
+
 VIEW_SEVERANCE = """
 CREATE VIEW {s}.v_db_severance_estimate AS
 WITH r AS (SELECT emp_id, pay_month, gross_pay, row_number() OVER (PARTITION BY emp_id ORDER BY pay_month DESC) rn FROM hr.payroll),
 l3 AS (SELECT emp_id, sum(gross_pay) AS pay3, min(to_date(pay_month || '-01', 'YYYY-MM-DD')) AS m0,
               max(to_date(pay_month || '-01', 'YYYY-MM-DD')) AS m1, count(*) AS n FROM r WHERE rn <= 3 GROUP BY emp_id),
-x AS (SELECT p.emp_id, e.hire_date, current_date AS as_of,
-             (extract(year FROM age(current_date, e.hire_date)) * 12 + extract(month FROM age(current_date, e.hire_date))
-              + CASE WHEN extract(day FROM age(current_date, e.hire_date)) > 0 THEN 1 ELSE 0 END)::int AS service_months,
+x AS (SELECT p.emp_id, e.hire_date, date '{d}' AS as_of,
+             (extract(year FROM age(date '{d}', e.hire_date)) * 12 + extract(month FROM age(date '{d}', e.hire_date))
+              + CASE WHEN extract(day FROM age(date '{d}', e.hire_date)) > 0 THEN 1 ELSE 0 END)::int AS service_months,
              l3.pay3, ((l3.m1 + interval '1 month')::date - l3.m0) AS days3
       FROM {s}.pension_plans p JOIN hr.employees e ON e.emp_id = p.emp_id JOIN l3 ON l3.emp_id = p.emp_id
       WHERE p.plan_type = 'DB' AND p.status = '운용중' AND e.status = '재직' AND l3.n = 3)
@@ -105,7 +108,7 @@ SELECT emp_id, hire_date, as_of, service_months, pay3 AS last3_gross_pay, days3 
        round(pay3::numeric / days3) AS avg_daily_wage,
        CASE WHEN service_months < 12 THEN 0 ELSE (ceil(pay3::numeric / days3 * 30 * service_months / 12 / 10) * 10)::bigint END AS est_severance
 FROM x;
-COMMENT ON VIEW {s}.v_db_severance_estimate IS 'DB 가입 재직자의 오늘 퇴직 가정 퇴직금 추정 = 최근 3개 급여월 임금총액 / 일수 x 30 x 근속개월/12, 10원 미만 절상(시행세칙 제8조). 근속 1년 미만 0. 평균임금은 근로기준법 3개월 방식 가정(규정은 보수규정 위임)'
+COMMENT ON VIEW {s}.v_db_severance_estimate IS 'DB 가입 재직자의 {d} 퇴직 가정 퇴직금 추정 = 최근 3개 급여월 임금총액 / 일수 x 30 x 근속개월/12, 10원 미만 절상(시행세칙 제8조). 근속 1년 미만 0. 평균임금은 근로기준법 3개월 방식 가정(규정은 보수규정 위임)'
 """
 
 
@@ -133,7 +136,7 @@ def main():
                     while chunk := f.read(1 << 20):
                         cp.write(chunk)
         if con.execute("SELECT to_regclass('hr.payroll')").fetchone()[0]:
-            con.execute(VIEW_SEVERANCE.format(s=S))
+            con.execute(VIEW_SEVERANCE.format(s=S, d=SEVERANCE_AS_OF))
         errs = []
         for t in TABLES:
             got = con.execute(f"SELECT count(*) FROM {S}.{t}").fetchone()[0]

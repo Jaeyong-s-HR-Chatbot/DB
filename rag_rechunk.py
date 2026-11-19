@@ -5,6 +5,7 @@
 출력: data/hang/chunks.jsonl  (항 단위 조각, rag.chunks 와 같은 칸 + article_id·hang·granularity)
       data/hang/articles.jsonl (조문 전체 원문 1건 = 1행, 검색은 항으로 하고 답할 때 조문 전체를 보여 주기용)
       data/hang/documents.json (규정+법령 문서 목록, 조각 수 갱신)
+      data/hang/old_to_new.json (예전 chunk_id → article_id·새 chunk_id 목록. 골든셋 정답을 항 단위로 옮길 때)
 
 자르는 규칙
 - 검색 대상 '조문'만 다시 자름. 별표·부칙·서식안내·팀 가정 조각·검색 제외 조각은 그대로 (chunk_id도 그대로)
@@ -85,6 +86,9 @@ def split_ho(text):
     return parts
 
 
+OLD2NEW = {}  # 예전 chunk_id → {article_id, new: [새 chunk_id …]}
+
+
 def rechunk(chunks):
     out, articles, i, seen = [], [], 0, {}
     while i < len(chunks):
@@ -93,6 +97,7 @@ def rechunk(chunks):
         if not (c["searchable"] and c["chunk_type"] == "조문"):
             # 같은 조문이 여러 조각으로 나뉜 별표·부칙 등은 그대로 두되 article_id 로 묶음
             out.append(dict(c, article_id=aid, hang="", granularity="그대로"))
+            OLD2NEW[c["chunk_id"]] = dict(article_id=aid, new=[c["chunk_id"]])
             i += 1
             continue
         group = [c]
@@ -108,6 +113,7 @@ def rechunk(chunks):
         if seen[aid] > 1:
             aid = f"{aid}#{seen[aid]}"
         full = join_parts([g["text"] for g in group])
+        start = len(out)
         head = head_of(c)
         body = HEAD.sub("", full, count=1)
         articles.append(dict(article_id=aid, document_id=c["document_id"], doc_kind=c["doc_kind"], doc_name=c["doc_name"],
@@ -116,13 +122,15 @@ def rechunk(chunks):
         hangs = split_hang(body)
         if len(hangs) == 1 and len(group) == 1 and len(full) <= MAX_CHARS:
             out.append(dict(c, article_id=aid, hang="", granularity="조"))  # 그대로 (임베딩 재사용)
-            continue
-        n = 0
-        for mark, seg in hangs:
-            for pi, piece in enumerate(split_ho(seg), 1):
-                n += 1
-                out.append(dict(c, chunk_id=f"{c['chunk_id']}-{n:02d}", part=pi, text=f"{head} {piece}",
-                                article_id=aid, hang=mark, granularity="항" if mark else "조"))
+        else:
+            n = 0
+            for mark, seg in hangs:
+                for pi, piece in enumerate(split_ho(seg), 1):
+                    n += 1
+                    out.append(dict(c, chunk_id=f"{c['chunk_id']}-{n:02d}", part=pi, text=f"{head} {piece}",
+                                    article_id=aid, hang=mark, granularity="항" if mark else "조"))
+        for g in group:  # 예전 조각(part 1, 2 …) → 새 조각 목록 (골든셋 정답 옮기기용)
+            OLD2NEW[g["chunk_id"]] = dict(article_id=aid, new=[x["chunk_id"] for x in out[start:]])
     return out, articles
 
 
@@ -156,6 +164,7 @@ def main():
         for a in all_articles:
             f.write(json.dumps(a, ensure_ascii=False) + "\n")
     json.dump(docs, open(OUT / "documents.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    json.dump(OLD2NEW, open(OUT / "old_to_new.json", "w", encoding="utf-8"), ensure_ascii=False, indent=0)
     print(f"저장: {OUT} (조각 {len(all_chunks)}개, 조문 {len(all_articles)}건)")
 
 
