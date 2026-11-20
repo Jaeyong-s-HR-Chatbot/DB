@@ -77,6 +77,7 @@ def load():
     if pension.exists():
         with gzip.open(pension, "rb") as f:
             psql("hrdb", user="hr", input=f.read(), stdout=subprocess.DEVNULL)
+    psql("hrdb", "-f", str(INIT / "05_user_roles.sql"), user="hr")   # 기밀문서 역할 (app.user_roles)
     print("완료:", URL)
 
 
