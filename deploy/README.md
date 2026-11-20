@@ -15,6 +15,8 @@ docker compose logs -f hrdb          # "database system is ready" 나오면 완�
 
 > 이미 띄워 둔 DB에 퇴직연금만 추가: `gunzip -c deploy/initdb/04_pension.sql.gz | docker exec -i nuri-hrdb psql -U hr -d hrdb` (이미 있으면 `DROP SCHEMA pension CASCADE;` 후)
 
+> 이미 띄워 둔 DB에 기밀문서 역할만 추가: `docker exec -i nuri-hrdb psql -U hr -d hrdb < deploy/initdb/05_user_roles.sql`
+
 > 이미 띄워 둔 DB가 있으면 카테고리 변경만 적용: `docker exec -i nuri-hrdb psql -U hr -d hrdb < deploy/initdb/03_categories.sql`
 > (initdb 폴더는 DB를 처음 만들 때만 실행돼요. 처음부터 다시 만들어도 돼요: `docker compose down -v && docker compose up -d`)
 
@@ -27,6 +29,7 @@ gunzip -c deploy/initdb/01_hrdb.sql.gz | psql -d hrdb
 psql -d hrdb -f deploy/initdb/02_grants.sql
 psql -d hrdb -f deploy/initdb/03_categories.sql
 gunzip -c deploy/initdb/04_pension.sql.gz | psql -d hrdb      # 퇴직연금(가상) 데이터
+psql -d hrdb -f deploy/initdb/05_user_roles.sql
 ```
 
 ## 들어 있는 것 (deploy/initdb)
