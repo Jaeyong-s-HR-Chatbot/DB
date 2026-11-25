@@ -30,6 +30,7 @@ NOISE = re.compile(r"^[\s\[\]【】<>()（）■□❑※○·ㆍ.,:\d-]*$|년\s
 def norm(s):
     """'근 무 상 황 부' 처럼 글자마다 띄운 제목을 붙이고, 앞뒤 기호를 뗌"""
     s = re.sub(r"[\[【<(（]?\s*별\s*지\s*(?:제\s*)?\d+(?:\s*의\s*\d+)?\s*호\s*서식\s*[\]】>)）]?", "", s)
+    s = re.sub(r"\[\s*별\s*지\s*서\s*식\s*\]", "", s)
     s = re.sub(r"[(（][^)）]*관련[^)）]*[)）]|[(（]\s*[)）]", "", s)
     s = re.sub(r"^\s*(?:\d+\s*\.|[①-⑳])\s*", "", s)
     s = s.strip(" <>■□❑※·-[]【】:")
@@ -79,7 +80,8 @@ def form_guides(chunks):
     for (doc, no), parts in forms.items():
         first = parts[0]
         lines = [l.strip() for p in parts for l in p["text"].split("\n") if l.strip()]
-        title = form_title(lines, first["article_title"]) or f"별지 제{no}호 서식"
+        form_label = f"별지 제{no}호 서식" if no else "별지 서식"
+        title = (form_title(lines, first["article_title"]) if no else norm(first["article_title"])) or form_label
         head = " ".join(lines[:4])
         rel = []
         for m in re.finditer(r"[(（]([^)）]*?)\s*관련\s*[)）]|[(（](제\s*\d+\s*조[^)）]*)[)）]", head):
@@ -97,18 +99,18 @@ def form_guides(chunks):
                     items.append(t.replace(" ", "") if len(t) <= 6 else t)
             if len(items) >= 12:
                 break
-        body = [f"[별지 제{no}호 서식] {title}",
+        body = [f"[{form_label}] {title}",
                 f"소속 규정: {first['doc_name']}"]
         if refs:
             body.append("관련 조항: " + ", ".join(refs))
         if items:
             body.append("주요 기재 항목: " + ", ".join(items))
-        body.append(f"{title} 양식(제출 서류)은 「{first['doc_name']}」 별지 제{no}호 서식을 씁니다.")
+        body.append(f"{title} 양식(제출 서류)은 「{first['doc_name']}」 {form_label}을 씁니다.")
         num = re.sub(r"\D", "", no.split("의")[0]) or "0"
         sub = f"-{no.split('의')[1]}" if "의" in no else ""
         out.append(dict(
             chunk_id=f"{doc}-F{int(num):02d}{sub}", document_id=doc, company_id=first["company_id"], doc_kind=first["doc_kind"],
-            doc_name=first["doc_name"], article=f"별지 {no}", article_title=title, part=1, text="\n".join(body),
+            doc_name=first["doc_name"], article=f"별지 {no}" if no else "별지", article_title=title, part=1, text="\n".join(body),
             effective_date=first["effective_date"], page=first["page"], source_file=first["source_file"],
             chunk_type="서식안내", categories=first["categories"], searchable=True, tier=first["tier"]))
     return out

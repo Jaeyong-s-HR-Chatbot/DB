@@ -65,7 +65,7 @@ def parent_doc(doc, prefix):
 # ① 조 → 별표
 _FWD = re.compile(
     r"(?:「(?P<named>[^」]+)」\s*(?:제\s*\d+\s*조(?:의\s*\d+)?\s*(?:의\s*)?)?|(?P<prefix>규정|법)\s*(?:제\s*\d+\s*조(?:의\s*\d+)?\s*의\s*)?)?"
-    r"별표\s*(?P<no>\d+)(?:\s*의\s*(?P<sub>\d+))?"
+    r"별표\s*(?P<no>\d+)(?:\s*(?P<sep>의|-)\s*(?P<sub>\d+))?"
 )
 
 
@@ -74,7 +74,7 @@ def forward_links():
     for a in ARTICLES:
         doc = a["document_id"]
         for m in _FWD.finditer(a["text"]):
-            no = m["no"] + (f"의{m['sub']}" if m["sub"] else "")
+            no = m["no"] + (f"{m['sep']}{m['sub']}" if m["sub"] else "")
             if m["named"]:
                 target = DOC_BY_NAME.get(squash(m["named"]))
             elif m["prefix"]:
