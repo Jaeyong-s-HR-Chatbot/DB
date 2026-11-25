@@ -73,6 +73,7 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python connector.py       # 6단계
 .venv/bin/python rag_fetch.py       # 7단계: 규정 원문 받기 (data/regs/raw, 저장소에는 안 올림)
 .venv/bin/python rag_build.py       # 7단계: 조문 조각
+.venv/bin/python rag_tables.py      # 7단계: 깨진 별표 표를 마크다운 표로 교체 (data/regs/table_markdown.json, 원문 없이 돌아감)
 python rag_embed.py                 # 7단계: torch + sentence-transformers 환경에서 (BGE-M3)
 .venv/bin/python rag_load.py        # 7단계: rag 스키마 적재
 .venv/bin/python db_viewer.py       # DB 조회 화면
@@ -99,6 +100,7 @@ python rag_embed.py                 # 7단계: torch + sentence-transformers 환
 긴 조문(예: 취업규칙 제56조 1,476자)이 통째로 한 조각이라, 질문과 관계없는 항까지 답변에 들어가던 문제를 줄이려고 항(①②…) 단위로 다시 잘랐어요.
 
 ```powershell
+.venv\Scripts\python rag_tables.py           # rag_build.py 를 다시 돌렸다면 먼저: 별표 표를 마크다운 표로
 .venv\Scripts\python rag_rechunk.py          # data/regs·data/laws 조각 → data/hang (원문 파일 없이 돌아감)
 # rag_embed_hang_colab.ipynb 를 Colab(GPU)에서 실행 → zip 안의 파일 4개를 data/hang/ 에
 ..\backend\.venv\Scripts\python rag_load_hang.py   # torch·sentence-transformers 있는 환경. HRDB_URL 없으면 localhost:5433
