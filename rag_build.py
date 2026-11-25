@@ -4,10 +4,11 @@
 
 자르는 규칙
 - 「제N조(제목)」마다 한 조각. 부칙 안의 조는 "부칙 제N조"로 따로 표시
-- [별표 N]은 별도 조각 (표 → 검색 대상), [별지 서식]은 신청 양식이라 원문은 검색 대상에서 뺌 (searchable=false)
+- [별표 N], 【별표 N의M】, [별표 N-M], [별표] 등은 별도 조각 (표 → 검색 대상), [별지 서식]은 신청 양식이라 원문은 검색 대상에서 뺌 (searchable=false)
   대신 서식마다 이름·관련 조항·기재 항목만 담은 '서식안내' 조각을 검색 대상으로 추가 (rag_forms.py)
 - "제N조 삭제" 조문, 목차에서 제목만 있는 줄은 검색 대상에서 뺌
-- 1,500자가 넘는 조각은 항(①②…) 경계에서 나눔 (part 1, 2 …)
+- 1,500자가 넘는 조각은 항(①②…) 경계에서, 별표는 줄 경계에서 나눔 (part 1, 2 …)
+  별표의 이어지는 조각에는 별표 머리와 있는 경우 제목·관련 조항을 반복
 - 칸: 팀 "데이터 형식 정의"(chunk_id, document_id, company_id, article, text, effective_date, page, source_file)
        + doc_name, article_title, chunk_type, categories(팀 카테고리 목록, categories.py), searchable
 - 회사 이름: 원문의 "한국철도공사"를 가상 회사 "누리철도㈜"로 바꿈 (조문 구조·기준은 그대로)
@@ -40,10 +41,15 @@ MAX_CHARS = 1500
 
 ART = re.compile(r"^\s*제\s*(\d+)\s*조(?:\s*의\s*(\d+))?\s*[\(（]([^)）\n]{1,40})[\)）]")
 ART_DEL = re.compile(r"^\s*제\s*(\d+)\s*조(?:\s*의\s*(\d+))?\s*(?:[\(（][^)）]*[\)）])?\s*삭\s*제")
-BYEOLPYO = re.compile(r"^\s*[\[【<]?\s*별\s*표\s*(\d+(?:\s*의\s*\d+)?)\s*[\]】>]?|^\s*[\[【]\s*별\s*표\s*[\]】]\s*$")
+BYEOLPYO = re.compile(
+    r"^\s*(?:\[\s*별\s*표\s*(?P<square>\d+(?:\s*(?:의|-)\s*\d+)?)?\s*\]"
+    r"|【\s*별\s*표\s*(?P<corner>\d+(?:\s*(?:의|-)\s*\d+)?)\s*】)(?=\s*(?:$|[<(（]))"
+)
 BYEOLJI = re.compile(r"^\s*[\[【<]?\s*별\s*지\s*(?:제\s*)?(\d+(?:\s*의\s*\d+)?)\s*호?")
+BYEOLJI_UNNUMBERED = re.compile(r"^\s*\[\s*별\s*지\s*서\s*식\s*\](?=\s*(?:$|[<(（]))")
 BUCHIK = re.compile(r"^\s*부\s*칙\b|^\s*부\s*칙\s*[<(]")
 PAGE_NO = re.compile(r"^\s*[-–]\s*\d+\s*[-–]\s*$|^\s*\d+\s*/\s*\d+\s*$")
+APPENDIX_REL = re.compile(r"\([^()\n]*제\s*\d+[^()\n]*관련\s*\)")
 
 
 # ------------------------------------------------------------------ 글자 뽑기
@@ -133,6 +139,34 @@ def split_long(text):
     return parts
 
 
+def split_appendix(text, title_line):
+    if len(text) <= MAX_CHARS:
+        return [text]
+    lines = text.split("\n")
+    header = [lines[0]]
+    if title_line and title_line not in header:
+        header.append(title_line)
+    related = next((line for line in lines[:8] if APPENDIX_REL.search(line)), None)
+    if related and related not in header:
+        header.append(related)
+    prefix = "\n".join(header)
+    parts, cur = [], ""
+    for line in lines:
+        candidate = f"{cur}\n{line}" if cur else line
+        if len(candidate) > MAX_CHARS:
+            if not cur or cur == prefix:
+                raise ValueError("별표 머리와 한 줄이 1,500자를 초과합니다")
+            parts.append(cur)
+            cur = f"{prefix}\n{line}"
+            if len(cur) > MAX_CHARS:
+                raise ValueError("별표 머리와 한 줄이 1,500자를 초과합니다")
+        else:
+            cur = candidate
+    if cur:
+        parts.append(cur)
+    return parts
+
+
 def effective_date(m):
     d = re.search(r"(\d{4})\s*년(?:도)?\s*(\d{1,2})\s*월(?:\s*(\d{1,2})\s*일)?", m["file_name"])
     if d:
@@ -167,9 +201,15 @@ def chunk_reg(reg):
         elif mm := ART.match(s):
             n = mm.group(1) + (f"의{mm.group(2)}" if mm.group(2) else "")
             start("부칙" if in_buchik else "조문", ("부칙 " if in_buchik else "") + f"제{n}조", mm.group(3).strip(), page)
-        elif (mm := BYEOLPYO.match(s)) and len(s) < 120 and (s[mm.end():mm.end() + 1] or " ") not in "에와과를은는이가및":
+        elif mm := BYEOLPYO.match(s):
             in_buchik = False
-            start("별표", f"별표 {mm.group(1).replace(' ', '')}" if mm.group(1) else "별표", s, page)
+            n = mm.group("square") or mm.group("corner")
+            n = re.sub(r"\s+", "", n) if n else ""
+            label = f"별표 {n}" if n else "별표"
+            start("별표", label, s, page)
+        elif BYEOLJI_UNNUMBERED.match(s):
+            in_buchik = False
+            start("서식", "별지", s, page)
         elif ((mm := BYEOLJI.match(s)) and len(s) < 120 and (s[mm.end():mm.end() + 1] or " ") not in "에와과를은는이가및"
               and not re.match(r"\s*서\s*식\s*(?:의|에|을|를|으로|및|과|와)", s[mm.end():])):  # "별지 제2호서식의 … 따라" 같은 본문 문장은 서식 머리가 아님
             in_buchik = False
@@ -182,12 +222,15 @@ def chunk_reg(reg):
         if not text.strip():
             continue
         toc = b["kind"] == "조문" and len(text) < len(b["label"]) + len(b["title"]) + 8  # 목차 줄
+        title_line = None
         if b["kind"] in ("별표", "서식"):  # 제목 줄은 개정 이력인 경우가 많아 다음 줄에서 실제 제목을 찾음
             cand = [l for l in b["lines"][:5] if not re.match(r"^\s*[\[【<(]", l) and not re.search(r"개정|^[\d.,\s]+>?$|>$", l) and len(l) >= 4]
+            title_line = cand[0].replace("한국철도공사", "누리철도㈜") if cand else None
             b["title"] = (cand[0] if cand else b["title"])[:60]
             b["cat_text"] = " ".join(b["lines"][:4])
         searchable = b["kind"] in ("조문", "별표", "부칙") and not toc
-        for pi, part in enumerate(split_long(text), 1):
+        parts = split_appendix(text, title_line) if b["kind"] == "별표" else split_long(text)
+        for pi, part in enumerate(parts, 1):
             seq += 1
             chunks.append(dict(
                 chunk_id=f"{reg['id']}-{seq:04d}", document_id=reg["id"], company_id=COMPANY, doc_kind="내부규정",
