@@ -91,7 +91,12 @@ def split_ho(text):
 OLD2NEW = {}  # 예전 chunk_id → {article_id, new: [새 chunk_id …]}
 
 
+# 조문 끝에 붙은 다음 장·절 제목 줄 ("제3장 복지후생"): 앞 조의 내용이 아니라서 뗌. 문장("…제2장의 규정은 …한다.")은 건드리지 않음
+NEXT_HEADING = re.compile(r"(\n[ \t]*제\s*\d+\s*[장절관][ \t\xa0]+[^\n.]{0,40})+\s*$")
+
+
 def rechunk(chunks):
+    chunks = [dict(c, text=NEXT_HEADING.sub("", c["text"])) if c.get("chunk_type") == "조문" else c for c in chunks]
     out, articles, i, seen = [], [], 0, {}
     while i < len(chunks):
         c = chunks[i]
