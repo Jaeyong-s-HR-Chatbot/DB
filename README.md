@@ -115,6 +115,7 @@ python rag_embed.py                 # 7단계: torch + sentence-transformers 환
 - 항 하나가 900자를 넘으면 호(1. 2. …) 경계에서 나누고, 이어지는 조각 앞에 항 첫 문장을 다시 붙임
 - 모든 조각 앞에 `제N조(제목)`을 붙임 (법령 원문은 조문 머리가 본문에 없음)
 - 결과: 검색 조각 2,697 → 5,720개 (규정 1,238 → 2,421, 법령 1,459 → 3,299), 평균 약 230자
+- 위임전결 본사 전결사항은 큰 표 조각은 그대로 두고, (부서, 업무)별 작은 조각 `r32-D0001~`(`chunk_type='전결항목'`, 552개)을 더 만들어요 (`rag_delegation.py`, rag_rechunk.py 가 자동 실행). `article_id` 가 조각마다 달라 조 단위 펼치기에 딸려오지 않아요. 표 순서로 번호를 매기므로 골든셋 정답에는 쓰지 마세요
 - `data/hang/old_to_new.json`: 예전 chunk_id → `article_id`·새 chunk_id 목록. 골든셋 정답을 항 단위로 옮길 때 써요 (RAG `eval/golden/add_hang_gold.py`)
 
 DB (`rag_load_hang.py`)

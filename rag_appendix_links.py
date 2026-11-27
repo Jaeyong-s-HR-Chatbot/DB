@@ -44,7 +44,7 @@ ARTICLE_IDS = {a["article_id"] for a in ARTICLES}
 
 APPX = defaultdict(list)                                       # 별표 article_id → 조각 (순서대로)
 for c in CHUNKS:
-    if c["article"].startswith("별표") and c.get("searchable"):
+    if c["article"].startswith("별표") and c.get("searchable") and c.get("chunk_type") != "전결항목":
         APPX[c["article_id"]].append(c)
 
 

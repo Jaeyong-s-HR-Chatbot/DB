@@ -20,6 +20,8 @@ import json
 import re
 from pathlib import Path
 
+from rag_delegation import delegation_chunks
+
 HERE = Path(__file__).parent
 SRC = [(HERE / "data/regs", "내부규정"), (HERE / "data/laws", "법령")]
 OUT = HERE / "data/hang"
@@ -143,6 +145,10 @@ def main():
             c.setdefault("doc_kind", kind)
         before = sum(c["searchable"] for c in cs)
         ch, arts = rechunk(cs)
+        if kind == "내부규정":            # 위임전결 표를 업무별 작은 조각으로 더 만듦 (rag_delegation.py)
+            extra = delegation_chunks(ch)
+            ch += extra
+            print(f"위임전결 업무 묶음 조각 {len(extra)}개 추가")
         all_chunks += ch
         all_articles += arts
         ds = json.load(open(folder / "documents.json", encoding="utf-8"))
