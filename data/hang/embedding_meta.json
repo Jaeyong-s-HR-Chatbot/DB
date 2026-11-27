@@ -1,8 +1,15 @@
 {
  "model": "BAAI/bge-m3",
  "dim": 1024,
- "count": 5763,
+ "count": 6329,
  "normalized": true,
  "input": "규정명 조문 제목\\n본문",
- "device": "cuda (colab, fp16)"
+ "max_seq_length": 4096,
+ "device": "cuda (colab, fp16)",
+ "db_commit": "2f9dbd3 2026-11-27 Add files via upload",
+ "after": "rag_unwrap.py",
+ "patched_cpu": [
+  "r32-0013",
+  "L06-0009"
+ ]
 }

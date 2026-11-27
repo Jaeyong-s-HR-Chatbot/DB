@@ -187,3 +187,15 @@ def test_main_works_without_articles_file(monkeypatch, hang_dir):
     run_main(monkeypatch, hang_dir)
     assert not (hang_dir / "articles.jsonl").exists()
     assert _read(hang_dir / "chunks.jsonl")[0]["text"] == FIXED
+
+
+def test_main_skips_chunks_owned_by_rag_tables(monkeypatch, hang_dir):
+    # rag_tables.py 가 표로 복원한 조각(table_markdown*.json 에 있는 id)은 표 파일과 글이 같아야 해서 안 건드림
+    owned = next(iter(json.loads((u.HERE / "data/regs/table_markdown_ported.json").read_text(encoding="utf-8"))))
+    rows = _read(hang_dir / "chunks.jsonl")
+    rows.append(dict(rows[0], chunk_id=owned, article_id="r99:부칙", chunk_type="부칙", text="표 앞 줄\n이어지는 줄"))
+    _write(hang_dir / "chunks.jsonl", rows)
+    run_main(monkeypatch, hang_dir)
+    after = {r["chunk_id"]: r for r in _read(hang_dir / "chunks.jsonl")}
+    assert after[owned]["text"] == "표 앞 줄\n이어지는 줄"
+    assert after["r04-0008-01"]["text"] == FIXED
