@@ -76,7 +76,7 @@ def main():
         device = "cuda" if torch.cuda.is_available() else "cpu"
         t0 = time.time()
         model = SentenceTransformer(MODEL, device=device)
-        model.max_seq_length = 1024
+        model.max_seq_length = 2048  # 긴 별표(최대 약 1,900토큰)가 잘리지 않게
         todo.sort(key=lambda c: len(doc_text(c)))  # 길이 비슷한 것끼리 묶으면 CPU 에서 빠름
         new = model.encode([doc_text(c) for c in todo], batch_size=16, normalize_embeddings=True,
                            show_progress_bar=True, convert_to_numpy=True).astype(np.float32)

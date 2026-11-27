@@ -73,7 +73,7 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python connector.py       # 6단계
 .venv/bin/python rag_fetch.py       # 7단계: 규정 원문 받기 (data/regs/raw, 저장소에는 안 올림)
 .venv/bin/python rag_build.py       # 7단계: 조문 조각
-.venv/bin/python rag_tables.py      # 7단계: 깨진 별표 표를 마크다운 표로 교체 (data/regs/table_markdown.json, 원문 없이 돌아감)
+.venv/bin/python rag_tables.py      # 7단계: 깨진 별표 표를 마크다운 표로 교체 (data/regs/table_markdown*.json, 원문 없이 돌아감. law_build.py 를 다시 돌려도 실행)
 python rag_embed.py                 # 7단계: torch + sentence-transformers 환경에서 (BGE-M3)
 .venv/bin/python rag_load.py        # 7단계: rag 스키마 적재
 .venv/bin/python db_viewer.py       # DB 조회 화면

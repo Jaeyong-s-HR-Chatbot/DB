@@ -6,9 +6,10 @@
         표 밖 줄(별표 머리, 제목, (제N조 관련), <비고>)은 원래 조각의 줄을 그대로 쓴다.
         길어져도 조각을 새로 나누지 않는다 (나누면 조각 ID가 밀려 골든셋을 다시 고쳐야 함).
 
-순서: rag_build.py → rag_tables.py → rag_rechunk.py → rag_appendix_links.py
+순서: rag_build.py · law_build.py → rag_tables.py → rag_rechunk.py → rag_appendix_links.py
 실행:
-  python rag_tables.py            data/regs/table_markdown.json 의 표를 data/regs/chunks.jsonl 에 넣음 (원본 파일 필요 없음)
+  python rag_tables.py            data/regs/table_markdown.json · table_markdown_ported.json 의 표를
+                                  data/regs · data/laws · data/hang 의 chunks.jsonl 에 넣음 (원본 파일 필요 없음)
   python rag_tables.py --extract  data/regs/raw 원본에서 표를 다시 읽어 table_markdown.json 을 새로 만듦
                                   (pdfplumber, hwp5html(pyhwp), beautifulsoup4, lxml 필요)
 """
@@ -20,6 +21,10 @@ RAW = HERE / "data/regs/raw"
 REGS = HERE / "data/regs/chunks.jsonl"
 HANG = HERE / "data/hang/chunks.jsonl"
 OUT = HERE / "data/regs/table_markdown.json"
+# 원본 자동 추출(--extract)로 만들 수 없어 따로 옮겨 적은 표 (병합 칸·위임전결 ㅇ 위치·조직도 등).
+# 별표 말고도 위임전결 본사 전결사항(조각 종류는 '부칙'으로 되어 있음)이 들어 있음. --extract 는 이 파일을 건드리지 않음
+PORTED = HERE / "data/regs/table_markdown_ported.json"
+LAWS = HERE / "data/laws/chunks.jsonl"
 
 # 표가 깨진 별표 중 골든셋 정답·human check 근거에 쓰인 것부터. 제외: r06-0001(절차 그림), r26-0039~0042(4조각짜리 긴 자격증 표),
 # r31-0037(직제 분장업무 12번째 조각) — 자동 추출로 조각 경계를 지키기 어려워 따로 손봐야 함
@@ -343,9 +348,16 @@ def extract():
     print("→", OUT, len(out))
 
 
+def fixes() -> dict:
+    out = json.loads(OUT.read_text(encoding="utf-8"))
+    ported = json.loads(PORTED.read_text(encoding="utf-8"))
+    assert not set(out) & set(ported), "두 표 파일에 같은 조각이 있음"
+    return {**out, **ported}
+
+
 def apply():
-    fix = json.loads(OUT.read_text(encoding="utf-8"))
-    for p in (REGS, HANG):
+    fix = fixes()
+    for p in (REGS, LAWS, HANG):
         if not p.exists(): continue
         lines = p.read_text(encoding="utf-8").split("\n")
         n = 0
@@ -353,9 +365,9 @@ def apply():
             if not l.strip(): continue
             x = json.loads(l)
             f = fix.get(x["chunk_id"])
-            if not f or x.get("chunk_type") != "별표" or x["text"] == f["text"]: continue
+            if not f or x["text"] == f["text"]: continue
             if hashlib.sha1(x["text"].encode()).hexdigest() != f["old_sha1"]:
-                print(f"건너뜀 {x['chunk_id']}: 원래 글이 바뀜 (--extract 로 다시 만들 것)"); continue
+                print(f"건너뜀 {x['chunk_id']}: 원래 글이 바뀜 (표를 다시 만들 것)"); continue
             x["text"] = f["text"]; lines[i] = json.dumps(x, ensure_ascii=False); n += 1
         p.write_text("\n".join(lines), encoding="utf-8")
         print(p.relative_to(HERE), "표 교체", n)

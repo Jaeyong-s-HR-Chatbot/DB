@@ -3,7 +3,9 @@ import json
 from pathlib import Path
 
 HERE = Path(__file__).parent
-FIX = json.loads((HERE / "data/regs/table_markdown.json").read_text(encoding="utf-8"))
+load = lambda n: json.loads((HERE / "data/regs" / n).read_text(encoding="utf-8"))
+FIX = load("table_markdown.json")
+PORTED = load("table_markdown_ported.json")
 
 
 def chunks(rel):
@@ -11,15 +13,21 @@ def chunks(rel):
 
 
 def test_tables_applied_to_regs_and_hang():
-    for rel in ("data/regs/chunks.jsonl", "data/hang/chunks.jsonl"):
-        ch = chunks(rel)
-        for cid, f in FIX.items():
+    hang = chunks("data/hang/chunks.jsonl")
+    src = {**chunks("data/regs/chunks.jsonl"), **chunks("data/laws/chunks.jsonl")}
+    for cid, f in {**FIX, **PORTED}.items():
+        for rel, ch in (("조문 단위", src), ("항 단위", hang)):
             assert ch[cid]["text"] == f["text"], (rel, cid)
-            assert ch[cid]["chunk_type"] == "별표"
+    for cid in FIX:
+        assert src[cid]["chunk_type"] == "별표"
+
+
+def test_no_chunk_in_both_files():
+    assert not set(FIX) & set(PORTED)
 
 
 def test_markdown_tables_have_even_columns():
-    for cid, f in FIX.items():
+    for cid, f in {**FIX, **PORTED}.items():
         block = []
         for line in f["text"].split("\n") + [""]:
             if line.startswith("|"):
@@ -36,3 +44,7 @@ def test_appendix_head_kept():
     """별표 머리 줄(첫 줄)은 원래 글 그대로여야 별표 인식·별표↔조 연결이 유지됨."""
     for cid, f in FIX.items():
         assert f["text"].lstrip().startswith(("[별표", "【별표")), cid
+    before = chunks("data/regs/chunks.jsonl")
+    for cid, f in PORTED.items():
+        if cid in before and f["text"].startswith("[별표"):
+            assert before[cid]["chunk_type"] == "별표", cid
