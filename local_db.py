@@ -82,6 +82,7 @@ def load():
     psql("hrdb", "-f", str(INIT / "07_appendix_links.sql"), user="hr")   # 조 ↔ 별표·서식 연결표 (rag.appendix_links, rag.form_links)
     psql("hrdb", "-f", str(INIT / "08_hide_r32_broken_tables.sql"), user="hr")   # 위임전결 별표 1 정리 (깨진 15조각 검색 제외)
     psql("hrdb", "-f", str(INIT / "09_r27_contract_form.sql"), user="hr")   # 전문직 근로계약서 안의 조 → 서식
+    psql("hrdb", "-f", str(INIT / "10_article_refs.sql"), user="hr")   # 조 ↔ 조 인용 연결표 (rag.article_refs)
     print("완료:", URL)
 
 
