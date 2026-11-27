@@ -420,7 +420,7 @@ def hide_broken_delegation(fix):
         for i, l in enumerate(lines):
             if not l.strip(): continue
             x = json.loads(l)
-            if x["document_id"] != "r32": continue
+            if x["document_id"] != "r32" or x["chunk_type"] == "전결항목": continue   # 업무 묶음 조각(rag_delegation.py)은 그대로
             broken = x["chunk_type"] == "부칙" and not x["text"].lstrip().startswith("부칙")
             if not (broken or x["article"] == DELEGATION["article"]): continue
             want = dict(DELEGATION, searchable=x["chunk_id"] in fix)
