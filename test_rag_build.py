@@ -51,6 +51,26 @@ class AppendixTests(unittest.TestCase):
         self.assertIn("[별표]의 기준", chunks[0]["text"])
         self.assertIn("[별표 1-2]의 기준", chunks[0]["text"])
 
+    def test_articles_inside_form_stay_in_form(self):
+        # 전문직 직원 운영 세칙 별지 1 근로계약서의 제1조(당사자)… 는 규정 조문이 아님
+        lines = [(1, "제1조(목적) 규정 본문"),
+                 (2, "[별지 제1호서식]"), (2, "근로계약서(제8조 관련)"),
+                 (2, "제1조(당사자) 갑과 을"), (2, "제2조(계약기간) 1년"),
+                 (3, "[별지 제2호서식]"), (3, "평정서")]
+        reg = {"id": "test", "name": "시험", "category": "공통", "tier": "핵심"}
+        manifest = {"file_name": "시험.pdf", "alio_date": "2020.01.01", "kind": "pdf"}
+        with patch.dict(rag_build.MANIFEST, {"test": manifest}), patch.object(
+            rag_build, "load_lines", return_value=(lines, [], 3)
+        ):
+            chunks, _ = rag_build.chunk_reg(reg)
+        self.assertEqual([c["article"] for c in chunks if c["chunk_type"] == "조문"], ["제1조"])
+        inside = [c for c in chunks if c["text"].startswith(("제1조(당사자)", "제2조(계약기간)"))]
+        self.assertEqual(len(inside), 2)
+        head = next(c for c in chunks if c["text"].startswith("[별지 제1호서식]"))
+        for c in inside:
+            self.assertEqual((c["chunk_type"], c["article"], c["searchable"]), ("서식", "별지 1", False))
+            self.assertEqual(c["article_title"], head["article_title"])
+
     def test_unnumbered_form_is_separate_and_has_a_valid_guide(self):
         for heading in ("[별지서식]", "[별지 서식]"):
             with self.subTest(heading=heading):

@@ -371,7 +371,38 @@ def apply():
             x["text"] = f["text"]; lines[i] = json.dumps(x, ensure_ascii=False); n += 1
         p.write_text("\n".join(lines), encoding="utf-8")
         print(p.relative_to(HERE), "표 교체", n)
+    fold_form_articles()
     hide_broken_delegation(fix)
+
+
+def fold_form_articles():
+    """서식 안의 "제N조" 가 조문으로 잘린 조각 → 앞 서식의 이어지는 조각으로 (rag_build.py 규칙과 같음).
+    예: 전문직 직원 운영 세칙 별지 1 근로계약서의 제1조(당사자)~제10조(기타). 원문을 다시 읽지 않고 data/regs 에 반영"""
+    if not REGS.exists(): return
+    lines = REGS.read_text(encoding="utf-8").split("\n")
+    form, n, changed = {}, 0, collections.Counter()   # 문서 → 지금 이어지는 서식 조각
+    for i, l in enumerate(lines):
+        if not l.strip(): continue
+        x = json.loads(l)
+        d = x["document_id"]
+        if x["chunk_type"] == "서식":
+            form[d] = x
+        elif x["chunk_type"] == "조문" and d in form:
+            f = form[d]
+            x.update(chunk_type="서식", article=f["article"], article_title=f["article_title"],
+                     categories=f["categories"], searchable=False)
+            lines[i] = json.dumps(x, ensure_ascii=False); n += 1; changed[d] += 1
+        else:
+            form.pop(d, None)
+    REGS.write_text("\n".join(lines), encoding="utf-8")
+    docs_p = REGS.parent / "documents.json"
+    if changed and docs_p.exists():
+        docs = json.loads(docs_p.read_text(encoding="utf-8"))
+        for doc in docs:
+            if doc["document_id"] in changed:
+                doc["searchable"] = sum(1 for l in lines if l.strip() and (y := json.loads(l))["document_id"] == doc["document_id"] and y["searchable"])
+        docs_p.write_text(json.dumps(docs, ensure_ascii=False, indent=1), encoding="utf-8")
+    print("서식 안의 조 → 서식 조각", n, dict(changed))
 
 
 def hide_broken_delegation(fix):

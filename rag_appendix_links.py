@@ -168,7 +168,7 @@ def main():
         "how": "조 본문의 '별표 N'(다른 문서: '규정'·'법'·「이름」) 또는 별표 머리의 '(제N조 관련)'으로 연결",
         "article_to_appendix": {a: sorted(d) for a, d in sorted(links.items())},
         "appendix_to_article": {x: sorted(v) for x, v in sorted(by_appx.items())},
-        "evidence": {a: d for a, d in sorted(links.items())},
+        "evidence": {a: dict(sorted(d.items())) for a, d in sorted(links.items())},   # 정렬: 돌릴 때마다 순서가 바뀌지 않게
         "unlinked_appendix": unlinked,
         "count": {"appendix": len(APPX), "linked": len(by_appx), "unlinked": len(unlinked),
                   "article_with_appendix": len(links)},
