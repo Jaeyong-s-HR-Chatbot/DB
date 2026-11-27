@@ -198,6 +198,12 @@ def chunk_reg(reg):
         elif (mm := ART_DEL.match(s)) and len(s) < 60:
             n = mm.group(1) + (f"의{mm.group(2)}" if mm.group(2) else "")
             start("삭제", ("부칙 " if in_buchik else "") + f"제{n}조", "삭제", page)
+        elif ART.match(s) and cur["kind"] == "서식":
+            # 서식(예: 전문직 직원 근로계약서) 안의 "제1조(당사자)" 는 규정 조문이 아니라 서식 내용.
+            # 조마다 같은 서식의 이어지는 조각으로 (조각 id 를 예전과 같게 유지, 검색 대상 아님)
+            parent = cur.get("cont_of", cur)
+            start("서식", parent["label"], parent["title"], page)
+            cur["cont_of"] = parent
         elif mm := ART.match(s):
             n = mm.group(1) + (f"의{mm.group(2)}" if mm.group(2) else "")
             start("부칙" if in_buchik else "조문", ("부칙 " if in_buchik else "") + f"제{n}조", mm.group(3).strip(), page)
@@ -223,7 +229,9 @@ def chunk_reg(reg):
             continue
         toc = b["kind"] == "조문" and len(text) < len(b["label"]) + len(b["title"]) + 8  # 목차 줄
         title_line = None
-        if b["kind"] in ("별표", "서식"):  # 제목 줄은 개정 이력인 경우가 많아 다음 줄에서 실제 제목을 찾음
+        if b.get("cont_of"):  # 서식 안의 조: 서식 제목·카테고리를 그대로
+            b["title"], b["cat_text"] = b["cont_of"]["title"], b["cont_of"].get("cat_text", b["cont_of"]["title"])
+        elif b["kind"] in ("별표", "서식"):  # 제목 줄은 개정 이력인 경우가 많아 다음 줄에서 실제 제목을 찾음
             cand = [l for l in b["lines"][:5] if not re.match(r"^\s*[\[【<(]", l) and not re.search(r"개정|^[\d.,\s]+>?$|>$", l) and len(l) >= 4]
             title_line = cand[0].replace("한국철도공사", "누리철도㈜") if cand else None
             b["title"] = (cand[0] if cand else b["title"])[:60]
