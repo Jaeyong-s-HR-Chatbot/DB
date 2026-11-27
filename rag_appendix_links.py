@@ -6,7 +6,10 @@
   ② 별표 → 조: 별표 머리의 "(제24조 관련)", "(제94조 제1항 및 제3항 관련)", "(규정 제31조 관련)"
 둘 중 하나라도 있으면 연결. 결과에 연결 근거(조→별표 / 별표→조)를 같이 남겨요.
 
+  ③ 하위 별표: 어디에도 안 나오는 '별표 N의M'은 '별표 N'이 붙은 조에 붙임 (근거 '상위 별표')
+
 실행: python rag_appendix_links.py      (data/hang/articles.jsonl · chunks.jsonl 사용)
+결과: data/hang/appendix_links.json + deploy/initdb/07_appendix_links.sql (rag.appendix_links 테이블)
 """
 import json
 import re
@@ -16,6 +19,7 @@ from pathlib import Path
 HERE = Path(__file__).parent
 HANG = HERE / "data/hang"
 OUT = HANG / "appendix_links.json"
+SQL = HERE / "deploy/initdb/07_appendix_links.sql"
 
 
 def jl(p):
@@ -65,7 +69,7 @@ def parent_doc(doc, prefix):
 # ① 조 → 별표
 _FWD = re.compile(
     r"(?:「(?P<named>[^」]+)」\s*(?:제\s*\d+\s*조(?:의\s*\d+)?\s*(?:의\s*)?)?|(?P<prefix>규정|법)\s*(?:제\s*\d+\s*조(?:의\s*\d+)?\s*의\s*)?)?"
-    r"별표\s*(?P<no>\d+)(?:\s*(?P<sep>의|-)\s*(?P<sub>\d+))?"
+    r"별\s*표\s*(?P<no>\d+)(?:\s*(?P<sep>의|-)\s*(?P<sub>\d+))?"   # '별\n표 2'처럼 줄바꿈이 낀 원문도
 )
 
 
@@ -112,6 +116,32 @@ def backward_links():
     return out
 
 
+def write_sql(links):
+    """rag.appendix_links 테이블 SQL. 이미 만든 DB에 다시 실행해도 같은 결과"""
+    q = lambda s: "'" + s.replace("'", "''") + "'"
+    rows = [f"({q(art)}, {q(x)}, {q(ev)})" for art, d in sorted(links.items()) for x, ev in sorted(d.items())]
+    sql = [
+        "-- 조 ↔ 별표 연결표. rag_appendix_links.py 가 만듦 (손으로 고치지 말 것)",
+        "-- 조로 1차 검색 → 같은 article_id 의 항 + 이 표로 붙는 별표 조각(rag.chunks.article_id = appendix_id)을 리랭크",
+        "SET client_encoding = 'UTF8';   -- Windows psql 기본(CP949)으로 읽어도 깨지지 않게",
+        "CREATE TABLE IF NOT EXISTS rag.appendix_links (",
+        "    article_id  text NOT NULL,",
+        "    appendix_id text NOT NULL,",
+        "    evidence    text NOT NULL,",
+        "    PRIMARY KEY (article_id, appendix_id));",
+        "COMMENT ON TABLE rag.appendix_links IS '조 ↔ 별표. article_id = rag.articles.article_id, appendix_id = 별표 조각들의 rag.chunks.article_id';",
+        "COMMENT ON COLUMN rag.appendix_links.evidence IS '조→별표: 조 본문에 별표 N / 별표→조: 별표 머리 (제N조 관련) / 양쪽 / 상위 별표: 별표 N의M 을 별표 N 의 조에 붙임';",
+        "CREATE INDEX IF NOT EXISTS appendix_links_appendix_idx ON rag.appendix_links (appendix_id);",
+        "BEGIN;",
+        "DELETE FROM rag.appendix_links;",
+        "INSERT INTO rag.appendix_links (article_id, appendix_id, evidence) VALUES",
+        ",\n".join(rows) + ";",
+        "COMMIT;",
+    ]
+    SQL.write_text("\n".join(sql) + "\n", encoding="utf-8")
+    print(f"연결 {len(rows)}행 → {SQL}")
+
+
 def main():
     fwd, bwd = forward_links(), backward_links()
     links = defaultdict(dict)                                  # 조 → {별표: 근거}
@@ -121,6 +151,14 @@ def main():
     for x, arts in bwd.items():
         for art in arts:
             links[art][x] = "양쪽" if links[art].get(x) == "조→별표" else "별표→조"
+    # ③ 하위 별표: 본문에 따로 안 나오는 '별표 1의2'는 '별표 1'과 같은 조에 붙임 (예: 인사 '별표 1등의 권역별 범위')
+    linked = {x for d in links.values() for x in d}
+    for x in APPX:
+        m = re.fullmatch(r"(.+:별표 \d+)(?:의|-)\d+", x)
+        if x not in linked and m and m.group(1) in linked:
+            for art, d in links.items():
+                if m.group(1) in d:
+                    d.setdefault(x, "상위 별표")
     by_appx = defaultdict(list)
     for art, d in links.items():
         for x in d:
@@ -136,6 +174,7 @@ def main():
                   "article_with_appendix": len(links)},
     }
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+    write_sql(links)
     print(f"별표 {len(APPX)} · 연결됨 {len(by_appx)} · 연결 안 됨 {len(unlinked)} · 별표가 붙는 조 {len(links)} → {OUT}")
 
 

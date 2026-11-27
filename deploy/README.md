@@ -41,6 +41,7 @@ psql -d hrdb -f deploy/initdb/05_user_roles.sql
 | 02_grants.sql | hr_connector는 erp_ro 뷰 SELECT만 |
 | 03_categories.sql | `rag.chunks.category`(1개) → `categories`(여러 개). `rag_categories.py`가 만듦 |
 | 04_pension.sql.gz | 퇴직연금(가상) 스키마 `pension`: 테이블 10개(가입 800명, 납입, 보유 상품, 거래, 상품·운용사·기준가 등) + 뷰 1개(`v_db_severance_estimate`, DB형 퇴직금 추정, **기준일 2026-11-19 고정**). 01 뒤에 실행돼야 해요(뷰가 `hr.payroll`을 씀). Docker는 파일 이름순으로 자동 실행. 자세한 규칙은 `data/pension/README_퇴직연금_데이터.md` |
+| 07_appendix_links.sql | 조 ↔ 별표 연결표 `rag.appendix_links`(article_id, appendix_id, evidence). `rag_appendix_links.py`가 만듦. 조로 찾은 뒤 `rag.chunks.article_id = appendix_id`인 별표 조각을 리랭크 후보에 붙일 때 사용. 이미 띄운 DB: `docker exec -i nuri-hrdb psql -U hr -d hrdb < deploy/initdb/07_appendix_links.sql` |
 
 - 테이블 35개, 약 49만 행, 규정·법령 조각 임베딩(BGE-M3, 1024차원) 2,583개, 문서 46건(규정 33 + 법령 13), 조각 2,915개
 - 만든 방법: `.venv/bin/python db_export.py` — 덤프 후 새 DB에 되살려 모든 테이블 건수가 같은지 자동 확인
