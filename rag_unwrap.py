@@ -196,10 +196,23 @@ def main():
     articles = read_jsonl(arts_path) if arts_path.exists() else []
     vocab = build_vocab([c["text"] for c in chunks] + [a["text"] for a in articles])  # 고치기 전 글 기준
 
-    changed, left_chunks, samples = 0, 0, []
+    # rag_tables.py 가 표로 복원한 조각(부칙 속 전결표, 계산식 조문 등)은 글이 표 파일과 같아야 함
+    # (test_rag_tables · rag_delegation 이 그 글을 그대로 씀) → 건드리지 않음. 항으로 나뉜 것(cid-01 …)도
+    table_ids = set()
+    for name in ("table_markdown.json", "table_markdown_ported.json"):
+        p = HERE / "data/regs" / name
+        if p.exists():
+            table_ids |= set(json.loads(p.read_text(encoding="utf-8")))
+    owned = lambda cid: cid in table_ids or re.sub(r"-\d+$", "", cid) in table_ids
+    skip_articles = {c["article_id"] for c in chunks if owned(c["chunk_id"]) and c.get("article_id")}
+
+    changed, left_chunks, samples, skipped = 0, 0, [], 0
     broken_before = broken_after = 0  # Notion 확인 기준: [가-힣]\n[가-힣] 가 있는 조각 수
     for c in chunks:
         if c.get("chunk_type") not in TARGET_TYPES:
+            continue
+        if owned(c["chunk_id"]):
+            skipped += 1
             continue
         broken_before += bool(STRICT.search(c["text"]))
         new = unwrap(c["text"], vocab)
@@ -213,12 +226,15 @@ def main():
             samples += [f"{c['chunk_id']}: {s}" for s in lo]
     a_changed = 0
     for a in articles:
+        if a.get("article_id") in skip_articles:
+            continue
         new = unwrap(a["text"], vocab)
         if new != a["text"]:
             a_changed += 1
             a["text"] = new
 
-    print(f"조각 {changed}개, 조문 원문 {a_changed}건 고침 / 고친 뒤에도 끊김이 남은 조각 {left_chunks}개")
+    print(f"조각 {changed}개, 조문 원문 {a_changed}건 고침 / 고친 뒤에도 끊김이 남은 조각 {left_chunks}개"
+          f" (rag_tables 표 조각 {skipped}개는 건너뜀)")
     print(f"확인 기준 [가-힣]\\n[가-힣] 가 있는 조문·부칙 조각: {broken_before} → {broken_after}개 (목표: 100개 아래)")
     print("  ※ 목 번호·장절 제목·부칙의 '제N조 (…)'·'부칙' 줄처럼 일부러 남긴 줄바꿈도 이 숫자에 들어 있음 → 낱말 중간 끊김은 위 '남은 조각'")
     for s in samples[:args.show]:

@@ -104,6 +104,7 @@ python rag_embed.py                 # 7단계: torch + sentence-transformers 환
 .venv\Scripts\python rag_scans.py            # rag_build.py 를 다시 돌렸다면 먼저: 스캔 본문 추가
 .venv\Scripts\python rag_tables.py           # 그다음 별표 표를 마크다운 표로
 .venv\Scripts\python rag_rechunk.py          # data/regs·data/laws 조각 → data/hang (원문 파일 없이 돌아감)
+.venv\Scripts\python rag_unwrap.py           # 조문·부칙 끊긴 낱말 줄바꿈 정리 (rechunk 다음, 연결표·임베딩 앞)
 # rag_embed_hang_colab.ipynb 를 Colab(GPU)에서 실행 → zip 안의 파일 4개를 data/hang/ 에
 ..\backend\.venv\Scripts\python rag_load_hang.py   # torch·sentence-transformers 있는 환경. HRDB_URL 없으면 localhost:5433
 ```
