@@ -105,6 +105,25 @@ class AppendixTests(unittest.TestCase):
             links = rag_appendix_links.forward_links()
         self.assertEqual(links["test:제1조"], {"test:별표 1-2"})
 
+    def test_form_links_from_article_text_and_related_line(self):
+        articles = [
+            {"article_id": "t:제3조", "document_id": "t", "text": "제3조(신청) 별지 제2호 서식에 따라 신청한다. 별\n표 1과 같다."},
+            {"article_id": "t:제5조", "document_id": "t", "text": "제5조(심사) 개인별 심사자료(별지서식)를 낸다."},
+            {"article_id": "t:제7조", "document_id": "t", "text": "제7조(기타) 서식 언급 없음"},
+            {"article_id": "t:제9조의2", "document_id": "t", "text": "제9조의2(위원) 본문"},
+        ]
+        guide = lambda fid, rel: [{"document_id": "t", "chunk_type": "서식안내", "article_id": fid,
+                                   "text": f"[별지 서식] 제목\n소속 규정: 시험\n관련 조항: {rel}\n"}]
+        forms = {"t:별지 2": guide("t:별지 2", "제3조(신청), 제7조제1항"), "t:별지": guide("t:별지", "없음"),
+                 "t:별지 4": guide("t:별지 4", "제9조의2(위원)")}
+        with patch.object(rag_appendix_links, "ARTICLES", articles), patch.object(rag_appendix_links, "FORMS", forms), \
+                patch.object(rag_appendix_links, "ARTICLE_IDS", {a["article_id"] for a in articles}):
+            links = rag_appendix_links.form_links()
+        self.assertEqual(links["t:제3조"], {"t:별지 2": "양쪽"})
+        self.assertEqual(links["t:제7조"], {"t:별지 2": "서식→조"})       # '제7조제1항' → 제7조
+        self.assertEqual(links["t:제5조"], {"t:별지": "조→서식"})          # 번호 없는 '별지서식'
+        self.assertEqual(links["t:제9조의2"], {"t:별지 4": "서식→조"})
+
     def test_long_appendix_repeats_heading_and_related_line_without_splitting_rows(self):
         header = ["[별표 1]", "표 제목", "(제9조 관련)"]
         rows = [f"행 {i}: " + "가" * 280 for i in range(10)]

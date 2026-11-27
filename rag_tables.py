@@ -405,10 +405,14 @@ def fold_form_articles():
     print("서식 안의 조 → 서식 조각", n, dict(changed))
 
 
+DELEGATION = dict(chunk_type="별표", article="별표 1", article_title="본사 전결사항")
+
+
 def hide_broken_delegation(fix):
     """위임전결 별표 1(본사 전결사항)은 부칙 뒤에 붙어 '부칙' 조각으로 잘렸고, 결재권자 열이 사라져 'ㅇ'만 남음.
-    표로 옮겨 적은 조각(PORTED)과 진짜 부칙(글이 '부칙'으로 시작)은 두고, 나머지는 답할 근거가 안 되고
-    출장·채용·보수 같은 낱말로 다른 질문에 끼어들어서 검색 대상에서 뺌 (2026-11-27 골든셋 6문항에서 확인)"""
+    - 진짜 부칙(글이 '부칙'으로 시작, r32-0013)을 뺀 나머지는 '별표 1' 조각으로 → 제8조 "별표 1과 같다"와 연결됨
+    - 표로 옮겨 적은 조각(PORTED, r32-0025~0029)만 검색 대상. 나머지는 답할 근거가 안 되고
+      출장·채용·보수 같은 낱말로 다른 질문에 끼어들어서 뺌 (2026-11-27 골든셋 6문항에서 확인)"""
     hidden = set()
     for p in (REGS, HANG):
         if not p.exists(): continue
@@ -416,11 +420,16 @@ def hide_broken_delegation(fix):
         for i, l in enumerate(lines):
             if not l.strip(): continue
             x = json.loads(l)
-            if (x["document_id"] == "r32" and x["chunk_type"] == "부칙" and x["chunk_id"] not in fix
-                    and not x["text"].lstrip().startswith("부칙")):
+            if x["document_id"] != "r32": continue
+            broken = x["chunk_type"] == "부칙" and not x["text"].lstrip().startswith("부칙")
+            if not (broken or x["article"] == DELEGATION["article"]): continue
+            want = dict(DELEGATION, searchable=x["chunk_id"] in fix)
+            if "article_id" in x:
+                want.update(article_id=f"r32:{DELEGATION['article']}", hang="", granularity="그대로")
+            if not want["searchable"]:
                 hidden.add(x["chunk_id"])
-                if x["searchable"]:
-                    x["searchable"] = False; lines[i] = json.dumps(x, ensure_ascii=False)
+            if any(x.get(k) != v for k, v in want.items()):
+                x.update(want); lines[i] = json.dumps(x, ensure_ascii=False)
         p.write_text("\n".join(lines), encoding="utf-8")
         docs_p = p.parent / "documents.json"
         if docs_p.exists():
@@ -429,7 +438,7 @@ def hide_broken_delegation(fix):
             for d in docs:
                 if d["document_id"] == "r32": d["searchable"] = n
             docs_p.write_text(json.dumps(docs, ensure_ascii=False, indent=1), encoding="utf-8")
-    print("위임전결 깨진 표 검색 제외", len(hidden), sorted(hidden))
+    print("위임전결 별표 1로 바꿈, 그중 검색 제외", len(hidden), sorted(hidden))
 
 
 if __name__ == "__main__":

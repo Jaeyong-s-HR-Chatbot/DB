@@ -41,8 +41,8 @@ psql -d hrdb -f deploy/initdb/05_user_roles.sql
 | 02_grants.sql | hr_connector는 erp_ro 뷰 SELECT만 |
 | 03_categories.sql | `rag.chunks.category`(1개) → `categories`(여러 개). `rag_categories.py`가 만듦 |
 | 04_pension.sql.gz | 퇴직연금(가상) 스키마 `pension`: 테이블 10개(가입 800명, 납입, 보유 상품, 거래, 상품·운용사·기준가 등) + 뷰 1개(`v_db_severance_estimate`, DB형 퇴직금 추정, **기준일 2026-11-19 고정**). 01 뒤에 실행돼야 해요(뷰가 `hr.payroll`을 씀). Docker는 파일 이름순으로 자동 실행. 자세한 규칙은 `data/pension/README_퇴직연금_데이터.md` |
-| 07_appendix_links.sql | 조 ↔ 별표 연결표 `rag.appendix_links`(article_id, appendix_id, evidence). `rag_appendix_links.py`가 만듦. 조로 찾은 뒤 `rag.chunks.article_id = appendix_id`인 별표 조각을 리랭크 후보에 붙일 때 사용. 이미 띄운 DB: `docker exec -i nuri-hrdb psql -U hr -d hrdb < deploy/initdb/07_appendix_links.sql` |
-| 08_hide_r32_broken_tables.sql | 위임전결규정 별표 1 중 결재권자 열이 사라져 `ㅇ`만 남은 15조각(부칙으로 잘못 잘림) `searchable = false`. 표로 옮겨 적은 r32-0025~0029는 그대로. 이미 띄운 DB: `docker exec -i nuri-hrdb psql -U hr -d hrdb < deploy/initdb/08_hide_r32_broken_tables.sql` |
+| 07_appendix_links.sql | 조 ↔ 별표 `rag.appendix_links`(article_id, appendix_id, evidence) · 조 ↔ 별지 서식 `rag.form_links`(article_id, form_id, evidence). `rag_appendix_links.py`가 만듦. 조로 찾은 뒤 `rag.chunks.article_id = appendix_id / form_id`이고 `searchable`인 별표·서식안내 조각을 리랭크 후보에 붙일 때 사용. 이미 띄운 DB: `docker exec -i nuri-hrdb psql -U hr -d hrdb < deploy/initdb/07_appendix_links.sql` |
+| 08_hide_r32_broken_tables.sql | 위임전결규정 별표 1(본사 전결사항)이 부칙으로 잘렸던 r32-0014~0033 → `별표 1` 조각(제8조와 연결). 그중 결재권자 열이 사라져 `ㅇ`만 남은 15조각은 `searchable = false`, 표로 옮겨 적은 r32-0025~0029만 검색. 이미 띄운 DB: `docker exec -i nuri-hrdb psql -U hr -d hrdb < deploy/initdb/08_hide_r32_broken_tables.sql` |
 | 09_r27_contract_form.sql | 전문직직원 운영 세칙 별지 1 근로계약서 안의 제1조~제10조(10조각)가 조문으로 검색되던 것 → 별지 1 서식 조각, `searchable = false`, `rag.articles`의 `r27:제N조#2` 삭제. 이미 띄운 DB: `docker exec -i nuri-hrdb psql -U hr -d hrdb < deploy/initdb/09_r27_contract_form.sql` |
 
 - 테이블 35개, 약 49만 행, 규정·법령 조각 임베딩(BGE-M3, 1024차원) 2,583개, 문서 46건(규정 33 + 법령 13), 조각 2,915개
