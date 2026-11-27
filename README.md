@@ -14,7 +14,7 @@ HR 복리후생 챗봇 팀 프로젝트의 **데이터·DB 쪽** 저장소입니
 | 4 DB 준비 | `db_setup.py` | pgserver로 로컬 PostgreSQL 16 + pgvector, DB `hrdb`, 스키마 erp / hr / rag / app |
 | 5 회사 DB 흉내 | `load_erp.py`, `mapping/nuri.yaml` | CSV를 회사식 이름(사원·사원번호)·코드값·8자리 날짜로 바꿔 `erp`에 적재, 왕복 검사 |
 | 6 커넥터 | `connector.py`, `mapping/standard.yaml` | 읽기 전용 뷰(`erp_ro`) → 연결표로 변환 → `hr_staging` → 검사 통과 시 `hr`로 교체, `app.sync_log` 기록 |
-| 7 규정·법령 RAG | `rag_fetch.py` → `rag_build.py` → `rag_embed.py` → `rag_load.py` → `rag_search.py` | ALIO 코레일 규정 33건 → 조문 조각(`data/regs/chunks.jsonl`) → BGE-M3 임베딩 → `rag` 스키마. 법령 13건은 법제처 Open API로 받아 같은 표에 넣음(`doc_kind='법령'`, 아래 참고) |
+| 7 규정·법령 RAG | `rag_fetch.py` → `rag_build.py` → `rag_embed.py` → `rag_load.py` → `rag_search.py` | ALIO 코레일 규정 32건 → 조문 조각(`data/regs/chunks.jsonl`) → BGE-M3 임베딩 → `rag` 스키마. 법령 13건은 법제처 Open API로 받아 같은 표에 넣음(`doc_kind='법령'`, 아래 참고) |
 | 8 항 단위 조각 | `rag_rechunk.py` → `rag_embed_hang_colab.ipynb` → `rag_load_hang.py` | 조문 조각을 항(①②…) 단위로 다시 잘라 `data/hang/` → Colab GPU로 BGE-M3 임베딩 → `rag.chunks` 교체 + `rag.articles`(조문 원문). 아래 "항 단위 조각" 참고 |
 | 9 퇴직연금(가상) | `pension/` (`gen_pension.py` → `pension_sim.py` → `pension_build.py` → `pension_load.py`, 검사 `validate_pension.py`) | 가상 운용사 4곳·상품 65개, 직원 800명의 DB/DC/미가입, 납입·보유·거래·이벤트 → `data/pension/build/*.csv` → `pension` 스키마(테이블 10 + 뷰 1). 골든셋 정답 숫자는 `eval/pension/build_pension_golden.py`가 DB에서 다시 계산. 퇴직금 추정 뷰는 **기준일 2026-11-19 고정**(`pension_load.py` `SEVERANCE_AS_OF`, 골든셋 `AS_OF`와 같음. 바꾸면 둘 다 바꾸고 04 덤프를 다시 만들 것). 규칙·검사는 `data/pension/README_퇴직연금_데이터.md` |
 | DB 배포 | `docker-compose.yml`, `deploy/`, `db_export.py` | 덤프(8MB)로 팀원 누구나 같은 hrdb를 띄움 → [deploy/README.md](deploy/README.md) |
@@ -73,6 +73,7 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python connector.py       # 6단계
 .venv/bin/python rag_fetch.py       # 7단계: 규정 원문 받기 (data/regs/raw, 저장소에는 안 올림)
 .venv/bin/python rag_build.py       # 7단계: 조문 조각
+.venv/bin/python rag_scans.py       # 7단계: 스캔 쪽 규정(겸직허가 운영 내규) 본문 조각 추가 (data/regs/scan_chunks.jsonl)
 .venv/bin/python rag_tables.py      # 7단계: 깨진 별표 표를 마크다운 표로 교체 (data/regs/table_markdown*.json, 원문 없이 돌아감. law_build.py 를 다시 돌려도 실행)
 python rag_embed.py                 # 7단계: torch + sentence-transformers 환경에서 (BGE-M3)
 .venv/bin/python rag_load.py        # 7단계: rag 스키마 적재
@@ -100,7 +101,8 @@ python rag_embed.py                 # 7단계: torch + sentence-transformers 환
 긴 조문(예: 취업규칙 제56조 1,476자)이 통째로 한 조각이라, 질문과 관계없는 항까지 답변에 들어가던 문제를 줄이려고 항(①②…) 단위로 다시 잘랐어요.
 
 ```powershell
-.venv\Scripts\python rag_tables.py           # rag_build.py 를 다시 돌렸다면 먼저: 별표 표를 마크다운 표로
+.venv\Scripts\python rag_scans.py            # rag_build.py 를 다시 돌렸다면 먼저: 스캔 본문 추가
+.venv\Scripts\python rag_tables.py           # 그다음 별표 표를 마크다운 표로
 .venv\Scripts\python rag_rechunk.py          # data/regs·data/laws 조각 → data/hang (원문 파일 없이 돌아감)
 # rag_embed_hang_colab.ipynb 를 Colab(GPU)에서 실행 → zip 안의 파일 4개를 data/hang/ 에
 ..\backend\.venv\Scripts\python rag_load_hang.py   # torch·sentence-transformers 있는 환경. HRDB_URL 없으면 localhost:5433
