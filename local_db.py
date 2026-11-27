@@ -79,8 +79,8 @@ def load():
             psql("hrdb", user="hr", input=f.read(), stdout=subprocess.DEVNULL)
     psql("hrdb", "-f", str(INIT / "05_user_roles.sql"), user="hr")   # 기밀문서 역할 (app.user_roles)
     psql("hrdb", "-f", str(INIT / "06_remove_r16.sql"), user="hr")   # 기간제근로자운영내규 삭제
-    psql("hrdb", "-f", str(INIT / "07_appendix_links.sql"), user="hr")   # 조 ↔ 별표 연결표 (rag.appendix_links)
-    psql("hrdb", "-f", str(INIT / "08_hide_r32_broken_tables.sql"), user="hr")   # 위임전결 깨진 표 15조각 검색 제외
+    psql("hrdb", "-f", str(INIT / "07_appendix_links.sql"), user="hr")   # 조 ↔ 별표·서식 연결표 (rag.appendix_links, rag.form_links)
+    psql("hrdb", "-f", str(INIT / "08_hide_r32_broken_tables.sql"), user="hr")   # 위임전결 별표 1 정리 (깨진 15조각 검색 제외)
     psql("hrdb", "-f", str(INIT / "09_r27_contract_form.sql"), user="hr")   # 전문직 근로계약서 안의 조 → 서식
     print("완료:", URL)
 

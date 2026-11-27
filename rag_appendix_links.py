@@ -8,8 +8,13 @@
 
   ③ 하위 별표: 어디에도 안 나오는 '별표 N의M'은 '별표 N'이 붙은 조에 붙임 (근거 '상위 별표')
 
+조문 ↔ 별지 서식(서식안내 조각)도 같은 방식으로 이어요 → data/hang/form_links.json
+  ① 조 → 서식: 조 본문의 "별지 제3호 서식에 따라", "「취업규칙」 별지 제1호서식"
+  ② 서식 → 조: 서식안내 조각의 "관련 조항: 제15조(결근), 제19조(근태관리)" ('제9조제4항'은 제9조로)
+
 실행: python rag_appendix_links.py      (data/hang/articles.jsonl · chunks.jsonl 사용)
-결과: data/hang/appendix_links.json + deploy/initdb/07_appendix_links.sql (rag.appendix_links 테이블)
+결과: data/hang/appendix_links.json · form_links.json
+      + deploy/initdb/07_appendix_links.sql (rag.appendix_links · rag.form_links 테이블)
 """
 import json
 import re
@@ -19,6 +24,7 @@ from pathlib import Path
 HERE = Path(__file__).parent
 HANG = HERE / "data/hang"
 OUT = HANG / "appendix_links.json"
+FORM_OUT = HANG / "form_links.json"
 SQL = HERE / "deploy/initdb/07_appendix_links.sql"
 
 
@@ -116,13 +122,46 @@ def backward_links():
     return out
 
 
-def write_sql(links):
-    """rag.appendix_links 테이블 SQL. 이미 만든 DB에 다시 실행해도 같은 결과"""
+# ------------------------------------------------------------------ 조 ↔ 별지 서식
+FORMS = defaultdict(list)                                      # 서식안내 article_id(예 r03:별지 1) → 조각
+for c in CHUNKS:
+    if c["chunk_type"] == "서식안내" and c.get("searchable"):
+        FORMS[c["article_id"]].append(c)
+
+_FORM_FWD = re.compile(r"(?:「(?P<named>[^」]+)」\s*)?별\s*지\s*제?\s*(?P<no>\d+)\s*호\s*(?:의\s*(?P<sub>\d+))?")
+_FORM_UNNUMBERED = re.compile(r"별\s*지\s*서\s*식")                # 번호 없는 서식 (문서에 하나뿐인 '별지')
+_RELATED = re.compile(r"관련 조항:\s*([^\n]+)")
+
+
+def form_links():
+    links = defaultdict(dict)                                  # 조 → {서식: 근거}
+    for a in ARTICLES:                                         # ① 조 → 서식
+        for m in _FORM_FWD.finditer(a["text"]):
+            doc = DOC_BY_NAME.get(squash(m["named"])) if m["named"] else a["document_id"]
+            fid = f"{doc}:별지 {m['no']}" + (f"의{m['sub']}" if m["sub"] else "")
+            if doc and fid in FORMS:
+                links[a["article_id"]][fid] = "조→서식"
+        if _FORM_UNNUMBERED.search(a["text"]) and (fid := f"{a['document_id']}:별지") in FORMS:   # "(별지서식)"
+            links[a["article_id"]][fid] = "조→서식"
+    for fid, parts in FORMS.items():                           # ② 서식 → 조 (서식안내의 '관련 조항')
+        m = _RELATED.search(parts[0]["text"])
+        if not m:
+            continue
+        for am in _ART.finditer(m.group(1)):
+            sub = am.group(2) or am.group(3) or am.group(4)
+            if (art := article_id(parts[0]["document_id"], am.group(1), sub)):
+                links[art][fid] = "양쪽" if links[art].get(fid) == "조→서식" else "서식→조"
+    return links
+
+
+def write_sql(appendix, forms):
+    """rag.appendix_links · rag.form_links 테이블 SQL. 이미 만든 DB에 다시 실행해도 같은 결과"""
     q = lambda s: "'" + s.replace("'", "''") + "'"
-    rows = [f"({q(art)}, {q(x)}, {q(ev)})" for art, d in sorted(links.items()) for x, ev in sorted(d.items())]
+    rows = lambda links: ",\n".join(f"({q(art)}, {q(x)}, {q(ev)})" for art, d in sorted(links.items()) for x, ev in sorted(d.items())) + ";"
     sql = [
-        "-- 조 ↔ 별표 연결표. rag_appendix_links.py 가 만듦 (손으로 고치지 말 것)",
-        "-- 조로 1차 검색 → 같은 article_id 의 항 + 이 표로 붙는 별표 조각(rag.chunks.article_id = appendix_id)을 리랭크",
+        "-- 조 ↔ 별표 · 조 ↔ 별지 서식 연결표. rag_appendix_links.py 가 만듦 (손으로 고치지 말 것)",
+        "-- 조로 1차 검색 → 같은 article_id 의 항 + 이 표로 붙는 별표·서식안내 조각(rag.chunks.article_id = appendix_id / form_id,",
+        "-- searchable 인 것만)을 리랭크",
         "SET client_encoding = 'UTF8';   -- Windows psql 기본(CP949)으로 읽어도 깨지지 않게",
         "CREATE TABLE IF NOT EXISTS rag.appendix_links (",
         "    article_id  text NOT NULL,",
@@ -132,14 +171,26 @@ def write_sql(links):
         "COMMENT ON TABLE rag.appendix_links IS '조 ↔ 별표. article_id = rag.articles.article_id, appendix_id = 별표 조각들의 rag.chunks.article_id';",
         "COMMENT ON COLUMN rag.appendix_links.evidence IS '조→별표: 조 본문에 별표 N / 별표→조: 별표 머리 (제N조 관련) / 양쪽 / 상위 별표: 별표 N의M 을 별표 N 의 조에 붙임';",
         "CREATE INDEX IF NOT EXISTS appendix_links_appendix_idx ON rag.appendix_links (appendix_id);",
+        "CREATE TABLE IF NOT EXISTS rag.form_links (",
+        "    article_id text NOT NULL,",
+        "    form_id    text NOT NULL,",
+        "    evidence   text NOT NULL,",
+        "    PRIMARY KEY (article_id, form_id));",
+        "COMMENT ON TABLE rag.form_links IS '조 ↔ 별지 서식. article_id = rag.articles.article_id, form_id = 서식안내 조각의 rag.chunks.article_id (같은 id 의 서식 원문 조각은 searchable=false)';",
+        "COMMENT ON COLUMN rag.form_links.evidence IS '조→서식: 조 본문에 별지 제N호 / 서식→조: 서식안내의 관련 조항 / 양쪽';",
+        "CREATE INDEX IF NOT EXISTS form_links_form_idx ON rag.form_links (form_id);",
         "BEGIN;",
         "DELETE FROM rag.appendix_links;",
         "INSERT INTO rag.appendix_links (article_id, appendix_id, evidence) VALUES",
-        ",\n".join(rows) + ";",
+        rows(appendix),
+        "DELETE FROM rag.form_links;",
+        "INSERT INTO rag.form_links (article_id, form_id, evidence) VALUES",
+        rows(forms),
         "COMMIT;",
     ]
     SQL.write_text("\n".join(sql) + "\n", encoding="utf-8")
-    print(f"연결 {len(rows)}행 → {SQL}")
+    n = lambda links: sum(len(d) for d in links.values())
+    print(f"별표 연결 {n(appendix)}행 · 서식 연결 {n(forms)}행 → {SQL}")
 
 
 def main():
@@ -174,8 +225,24 @@ def main():
                   "article_with_appendix": len(links)},
     }
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
-    write_sql(links)
     print(f"별표 {len(APPX)} · 연결됨 {len(by_appx)} · 연결 안 됨 {len(unlinked)} · 별표가 붙는 조 {len(links)} → {OUT}")
+
+    forms = form_links()
+    by_form = defaultdict(list)
+    for art, d in forms.items():
+        for x in d:
+            by_form[x].append(art)
+    funlinked = sorted(x for x in FORMS if x not in by_form)
+    FORM_OUT.write_text(json.dumps({
+        "how": "조 본문의 '별지 제N호'(「이름」이면 그 문서) 또는 서식안내의 '관련 조항: 제N조'로 연결",
+        "article_to_form": {a: sorted(d) for a, d in sorted(forms.items())},
+        "form_to_article": {x: sorted(v) for x, v in sorted(by_form.items())},
+        "evidence": {a: dict(sorted(d.items())) for a, d in sorted(forms.items())},
+        "unlinked_form": funlinked,
+        "count": {"form": len(FORMS), "linked": len(by_form), "unlinked": len(funlinked), "article_with_form": len(forms)},
+    }, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"서식 {len(FORMS)} · 연결됨 {len(by_form)} · 연결 안 됨 {len(funlinked)} · 서식이 붙는 조 {len(forms)} → {FORM_OUT}")
+    write_sql(links, forms)
 
 
 if __name__ == "__main__":
