@@ -371,6 +371,34 @@ def apply():
             x["text"] = f["text"]; lines[i] = json.dumps(x, ensure_ascii=False); n += 1
         p.write_text("\n".join(lines), encoding="utf-8")
         print(p.relative_to(HERE), "표 교체", n)
+    hide_broken_delegation(fix)
+
+
+def hide_broken_delegation(fix):
+    """위임전결 별표 1(본사 전결사항)은 부칙 뒤에 붙어 '부칙' 조각으로 잘렸고, 결재권자 열이 사라져 'ㅇ'만 남음.
+    표로 옮겨 적은 조각(PORTED)과 진짜 부칙(글이 '부칙'으로 시작)은 두고, 나머지는 답할 근거가 안 되고
+    출장·채용·보수 같은 낱말로 다른 질문에 끼어들어서 검색 대상에서 뺌 (2026-11-27 골든셋 6문항에서 확인)"""
+    hidden = set()
+    for p in (REGS, HANG):
+        if not p.exists(): continue
+        lines = p.read_text(encoding="utf-8").split("\n")
+        for i, l in enumerate(lines):
+            if not l.strip(): continue
+            x = json.loads(l)
+            if (x["document_id"] == "r32" and x["chunk_type"] == "부칙" and x["chunk_id"] not in fix
+                    and not x["text"].lstrip().startswith("부칙")):
+                hidden.add(x["chunk_id"])
+                if x["searchable"]:
+                    x["searchable"] = False; lines[i] = json.dumps(x, ensure_ascii=False)
+        p.write_text("\n".join(lines), encoding="utf-8")
+        docs_p = p.parent / "documents.json"
+        if docs_p.exists():
+            docs = json.loads(docs_p.read_text(encoding="utf-8"))
+            n = sum(1 for l in lines if l.strip() and (x := json.loads(l))["document_id"] == "r32" and x["searchable"])
+            for d in docs:
+                if d["document_id"] == "r32": d["searchable"] = n
+            docs_p.write_text(json.dumps(docs, ensure_ascii=False, indent=1), encoding="utf-8")
+    print("위임전결 깨진 표 검색 제외", len(hidden), sorted(hidden))
 
 
 if __name__ == "__main__":
