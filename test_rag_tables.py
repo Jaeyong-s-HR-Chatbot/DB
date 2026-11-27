@@ -16,8 +16,11 @@ def test_tables_applied_to_regs_and_hang():
     hang = chunks("data/hang/chunks.jsonl")
     src = {**chunks("data/regs/chunks.jsonl"), **chunks("data/laws/chunks.jsonl")}
     for cid, f in {**FIX, **PORTED}.items():
-        for rel, ch in (("조문 단위", src), ("항 단위", hang)):
-            assert ch[cid]["text"] == f["text"], (rel, cid)
+        assert src[cid]["text"] == f["text"], ("조문 단위", cid)
+        if cid in hang:
+            assert hang[cid]["text"] == f["text"], ("항 단위", cid)
+        else:                       # 계산식 조문: 항 단위에서는 cid-01, -02 … 로 나뉨
+            assert src[cid]["chunk_type"] == "조문" and f"{cid}-01" in hang, cid
     for cid in FIX:
         assert src[cid]["chunk_type"] == "별표"
 
