@@ -18,7 +18,7 @@ regulations:
   - {id: r13, name: 인사규정, tier: 핵심, category: 공통}
   - {id: r14, name: 인사규정 시행세칙, tier: 핵심, category: 공통}
   - {id: r15, name: 직원 전보제한 운영 내규, tier: 핵심, category: 공통}
-  - {id: r16, name: 철도공사 기간제근로자운영내규, tier: 핵심, category: 공통}
+  # r16 철도공사 기간제근로자운영내규: 2026-11-27 삭제 (번호는 다시 쓰지 않음)
   - {id: r17, name: 당직 및 비상근무 규정, tier: 보조, category: 근태관리}
   - {id: r18, name: 임원의 복무에 관한 지침, tier: 보조, category: 공통, note: 임원 전용 — 직원 답변에 섞이면 안 됨}
   - {id: r19, name: 공무국외출장 및 해외근무직원 관리 규정, tier: 보조, category: 출장}

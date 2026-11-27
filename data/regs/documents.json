@@ -77,9 +77,9 @@
   "category": "공통",
   "file_kind": "pdf",
   "pages": 23,
-  "chunks": 17,
-  "searchable": 7,
-  "chars": 6893,
+  "chunks": 43,
+  "searchable": 33,
+  "chars": 13300,
   "effective_date": "2026-08-01",
   "source_file": "겸직허가 운영 내규(2026년도 8월 1일 개정).pdf"
  },
@@ -208,20 +208,6 @@
   "chars": 8250,
   "effective_date": "2025-02-01",
   "source_file": "직원 전보제한 운영내규(2025년도 2월 개정).hwp"
- },
- {
-  "document_id": "r16",
-  "doc_name": "철도공사 기간제근로자운영내규",
-  "doc_kind": "내부규정",
-  "tier": "핵심",
-  "category": "공통",
-  "file_kind": "pdf",
-  "pages": 76,
-  "chunks": 5,
-  "searchable": 1,
-  "chars": 4969,
-  "effective_date": "2026-08-24",
-  "source_file": "철도공사 기간제근로자운영내규(2026년도 8월 24일 개정).pdf"
  },
  {
   "document_id": "r17",

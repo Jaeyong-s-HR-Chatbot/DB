@@ -78,6 +78,7 @@ def load():
         with gzip.open(pension, "rb") as f:
             psql("hrdb", user="hr", input=f.read(), stdout=subprocess.DEVNULL)
     psql("hrdb", "-f", str(INIT / "05_user_roles.sql"), user="hr")   # 기밀문서 역할 (app.user_roles)
+    psql("hrdb", "-f", str(INIT / "06_remove_r16.sql"), user="hr")   # 기간제근로자운영내규 삭제
     print("완료:", URL)
 
 

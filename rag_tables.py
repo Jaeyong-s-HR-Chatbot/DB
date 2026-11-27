@@ -6,7 +6,7 @@
         표 밖 줄(별표 머리, 제목, (제N조 관련), <비고>)은 원래 조각의 줄을 그대로 쓴다.
         길어져도 조각을 새로 나누지 않는다 (나누면 조각 ID가 밀려 골든셋을 다시 고쳐야 함).
 
-순서: rag_build.py · law_build.py → rag_tables.py → rag_rechunk.py → rag_appendix_links.py
+순서: rag_build.py · law_build.py → rag_scans.py → rag_tables.py → rag_rechunk.py → rag_appendix_links.py
 실행:
   python rag_tables.py            data/regs/table_markdown.json · table_markdown_ported.json 의 표를
                                   data/regs · data/laws · data/hang 의 chunks.jsonl 에 넣음 (원본 파일 필요 없음)
